@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qy.ticket.dao.VCheckMapper">
+  <resultMap id="BaseResultMap" type="com.qy.ticket.entity.VCheck">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <result column="id" jdbcType="BIGINT" property="id" />
+    <result column="time" jdbcType="TIMESTAMP" property="time" />
+    <result column="phone_num" jdbcType="VARCHAR" property="phoneNum" />
+    <result column="record_id" jdbcType="BIGINT" property="recordId" />
+    <result column="ticket_num" jdbcType="INTEGER" property="ticketNum" />
+    <result column="ticket_id" jdbcType="BIGINT" property="ticketId" />
+    <result column="card_no" jdbcType="VARCHAR" property="cardNo" />
+    <result column="ticket_name" jdbcType="VARCHAR" property="ticketName" />
+    <result column="product_name" jdbcType="VARCHAR" property="productName" />
+    <result column="park_name" jdbcType="VARCHAR" property="parkName" />
+  </resultMap>
+</mapper>

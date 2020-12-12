@@ -1,0 +1,42 @@
+server:
+  port: 8084
+tomcat:
+  min-spare-threads: 100
+  max-threads: 800
+  accept-count: 1000
+spring:
+  # 设置数据库
+  datasource:
+  # url: jdbc:mysql://rm-bp1axi70ew70h67ha.mysql.rds.aliyuncs.com:3306/gate?characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=GMT%2B8
+    url: jdbc:mysql://rm-bp1306r3i542lt3539o.mysql.rds.aliyuncs.com:3306/gate?characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=GMT%2B8
+    hikari:
+      username: ingcart
+      password: Ingcart168_
+      # >=6.x com.mysql.cj.jdbc.DriverIngcart168_
+      # <=5.x com.mysql.jdbc.Driver
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+# id
+id-generator:
+  machineId: 1
+  dataCenterId: 2
+
+# tx
+tx:
+  wx:
+    appid: wx602f7e78ee18c254
+    appsecret: 11184de0c10ab05fd1339a49e71e09fe
+    pay:
+      url: https://api.ingcart.com/wx/confirm
+      key: fcc4a06cbd882e578c96dcdfddd27c98
+      file: common/apiclient_cert.p12
+      pwd: 1526913671
+      mch: 1526913671
+    msg:
+      templateid: RcPRhlhz9lsctf-FB1tf9qUIrds24OE8vIVkCOkwu8A
+
+# jwt
+jwt:
+  secret: db3b2ac0c4f543edb0c6f2cf4c57861d
+  # 有效期，单位秒，默认2周
+  expire-time-in-second: 1209600

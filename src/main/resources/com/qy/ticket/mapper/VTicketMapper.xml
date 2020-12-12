@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qy.ticket.dao.VTicketMapper">
+  <resultMap id="BaseResultMap" type="com.qy.ticket.entity.VTicket">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <result column="ticket_id" jdbcType="BIGINT" property="ticketId" />
+    <result column="ticket_name" jdbcType="VARCHAR" property="ticketName" />
+    <result column="product_id" jdbcType="BIGINT" property="productId" />
+    <result column="park_id" jdbcType="BIGINT" property="parkId" />
+    <result column="ticket_price" jdbcType="DECIMAL" property="ticketPrice" />
+    <result column="park_name" jdbcType="VARCHAR" property="parkName" />
+    <result column="product_name" jdbcType="VARCHAR" property="productName" />
+  </resultMap>
+</mapper>

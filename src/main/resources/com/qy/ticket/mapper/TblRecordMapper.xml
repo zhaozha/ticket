@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qy.ticket.dao.TblRecordMapper">
+  <resultMap id="BaseResultMap" type="com.qy.ticket.entity.TblRecord">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="ticket_id" jdbcType="BIGINT" property="ticketId" />
+    <result column="time" jdbcType="TIMESTAMP" property="time" />
+    <result column="phone_num" jdbcType="VARCHAR" property="phoneNum" />
+    <result column="income" jdbcType="DECIMAL" property="income" />
+    <result column="amount" jdbcType="DECIMAL" property="amount" />
+    <result column="refund_amount" jdbcType="DECIMAL" property="refundAmount" />
+    <result column="available_num" jdbcType="INTEGER" property="availableNum" />
+    <result column="used_num" jdbcType="INTEGER" property="usedNum" />
+    <result column="total_num" jdbcType="INTEGER" property="totalNum" />
+  </resultMap>
+</mapper>

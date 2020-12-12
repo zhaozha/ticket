@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qy.ticket.dao.TblManagerMapper">
+  <resultMap id="BaseResultMap" type="com.qy.ticket.entity.TblManager">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="phone_num" jdbcType="VARCHAR" property="phoneNum" />
+    <result column="nick_name" jdbcType="VARCHAR" property="nickName" />
+    <result column="avatar_url" jdbcType="VARCHAR" property="avatarUrl" />
+    <result column="gender" jdbcType="INTEGER" property="gender" />
+    <result column="province" jdbcType="VARCHAR" property="province" />
+    <result column="city" jdbcType="VARCHAR" property="city" />
+    <result column="country" jdbcType="VARCHAR" property="country" />
+    <result column="open_id" jdbcType="VARCHAR" property="openId" />
+    <result column="level" jdbcType="INTEGER" property="level" />
+    <result column="product_id" jdbcType="BIGINT" property="productId" />
+    <result column="park_id" jdbcType="BIGINT" property="parkId" />
+    <result column="pwd" jdbcType="VARCHAR" property="pwd" />
+  </resultMap>
+</mapper>
