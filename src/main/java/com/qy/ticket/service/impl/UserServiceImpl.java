@@ -3,8 +3,8 @@ package com.qy.ticket.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.qy.ticket.annotation.RecordLock;
 import com.qy.ticket.common.CommonResult;
-import com.qy.ticket.config.ValidatorImpl;
 import com.qy.ticket.constant.RedisConstant;
 import com.qy.ticket.dao.*;
 import com.qy.ticket.dto.user.TblBillDTO;
@@ -14,15 +14,12 @@ import com.qy.ticket.dto.user.TblTicketDTO;
 import com.qy.ticket.dto.wx.*;
 import com.qy.ticket.entity.*;
 import com.qy.ticket.service.UserService;
-import com.qy.ticket.util.JwtUtil;
-import com.qy.ticket.util.ValidationResult;
-import com.qy.ticket.util.WXPayUtil;
+import com.qy.ticket.util.*;
 import com.virgo.virgoidgenerator.intf.IdBaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBucket;
-import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,13 +31,12 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import tk.mybatis.mapper.entity.Example;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.qy.ticket.constant.RedisConstant.KEY_TICKET_SEQ;
 import static com.qy.ticket.constant.SystemConstant.*;
 import static com.qy.ticket.util.WXPayConstants.DOMAIN_API;
 import static com.qy.ticket.util.WXPayConstants.REFUND_URL_SUFFIX;
@@ -84,8 +80,10 @@ public class UserServiceImpl implements UserService {
     private final TblBillRefundMapper tblBillRefundMapper;
     private final TblCheckMapper tblCheckMapper;
     private final VCheckMapper vCheckMapper;
+    private final TblBillCustomizedMapper tblBillCustomizedMapper;
+    private final TblBillChildCustomizedMapper tblBillChildCustomizedMapper;
+    private final TblRecordCustomizedMapper tblRecordCustomizedMapper;
 
-    private final ValidatorImpl validator;
     private final IdBaseService idBaseService;
     private final RestTemplate restTemplate;
     private final RestTemplate wxRefundRestTemplate;
@@ -93,7 +91,7 @@ public class UserServiceImpl implements UserService {
     private final JwtUtil jwtOperator;
 
     @Override
-    public CommonResult wxLogin(String code) {
+    public CommonResult wxLogin(String code) throws Exception {
         String url =
                 "https://api.weixin.qq.com/sns/jscode2session?appid="
                         + WX_APP_ID
@@ -139,7 +137,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResult wxRegister(TblUser tblUser) {
+    public CommonResult wxRegister(TblUser tblUser) throws Exception {
         String phoneNum = tblUser.getPhoneNum();
         if (StringUtils.isEmpty(phoneNum)) {
             return CommonResult.builder().status(400).msg("手机号必须填写").data(tblUser).build();
@@ -154,8 +152,7 @@ public class UserServiceImpl implements UserService {
     public CommonResult unifiedorder(TblBillDTO tblBillDTO) throws Exception {
         Long billId = idBaseService.genId();
         // 统一下单
-        WxUnifiedorderDTO wxUnifiedorderDTO =
-                WxUnifiedorderDTO.builder()
+        WxUnifiedorderDTO wxUnifiedorderDTO = WxUnifiedorderDTO.builder()
                         .appid(WX_APP_ID)
                         .mch_id(WX_PAY_MCH)
                         .openid(tblBillDTO.getOpenId())
@@ -166,16 +163,10 @@ public class UserServiceImpl implements UserService {
                         .total_fee(tblBillDTO.getAmount().intValue() * 100)
                         .trade_type("JSAPI")
                         .build();
-        String retStr = restTemplate.postForObject(
-                DOMAIN_API + UNIFIEDORDER_URL_SUFFIX,
-                WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxUnifiedorderDTO), WX_PAY_KEY),
-                String.class);
-        WxUnifiedorderResultDTO wxUnifiedorderResultDTO =
-                (WxUnifiedorderResultDTO)
-                        WXPayUtil.mapToObject(WXPayUtil.xmlToMap(retStr), WxUnifiedorderResultDTO.class);
+        String retStr = restTemplate.postForObject(DOMAIN_API + UNIFIEDORDER_URL_SUFFIX, WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxUnifiedorderDTO), WX_PAY_KEY), String.class);
+        WxUnifiedorderResultDTO wxUnifiedorderResultDTO = (WxUnifiedorderResultDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(retStr), WxUnifiedorderResultDTO.class);
         // 业务逻辑
-        if (wxUnifiedorderResultDTO.getResult_code().equals("SUCCESS")
-                && wxUnifiedorderResultDTO.getReturn_code().equals("SUCCESS")) {
+        if (wxUnifiedorderResultDTO.getResult_code().equals("SUCCESS") && wxUnifiedorderResultDTO.getReturn_code().equals("SUCCESS")) {
             WxPayResultDTO wxPayResultDTO = WxPayResultDTO.builder()
                     .appId(WX_APP_ID)
                     .nonceStr(WXPayUtil.generateNonceStr())
@@ -183,9 +174,7 @@ public class UserServiceImpl implements UserService {
                     .signType("MD5")
                     .timeStamp(String.valueOf(WXPayUtil.getCurrentTimestampMs()))
                     .build();
-            wxPayResultDTO.setPaySign(WXPayUtil.xmlToMap(
-                    WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxPayResultDTO), WX_PAY_KEY))
-                    .get("sign"));
+            wxPayResultDTO.setPaySign(WXPayUtil.xmlToMap(WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxPayResultDTO), WX_PAY_KEY)).get("sign"));
             // 主订单
             List<TblTicketDTO> list = tblBillDTO.getList().stream()
                     .filter(s -> s.getTicketNum() > 0)
@@ -199,29 +188,34 @@ public class UserServiceImpl implements UserService {
             tblBill.setProductId(tblTicket.getProductId());
             // 设置为未支付状态
             tblBill.setStatus(0);
-            tblBill.setRefundAmount(new BigDecimal("0"));
+            tblBill.setRefundAmount(0);
             tblBillMapper.insert(tblBill);
 
             // 详细清单 & 校验
-            BigDecimal amount = tblBill.getAmount();
+            int amount = tblBill.getAmount();
             for (TblTicketDTO tblTicketDTO : list) {
                 Long ticketId = tblTicketDTO.getTicketId();
-                TblTicket tblTicket1 = tblTicketMapper.selectByPrimaryKey(ticketId);
-                // 合计
-                BigDecimal total =
-                        tblTicket1.getPrice().multiply(new BigDecimal(tblTicketDTO.getTicketNum()));
-                amount = amount.subtract(total);
+                Integer ticketNum = tblTicketDTO.getTicketNum();
+
+                TblTicket ticket = tblTicketMapper.selectByPrimaryKey(ticketId);
+                Integer price = ticket.getPrice();
+                Integer returnableAmount = ticket.getReturnableAmount();
+                int total = price * tblTicketDTO.getTicketNum();
+
                 TblBillChild tblBillChild = new TblBillChild();
                 BeanUtils.copyProperties(tblBill, tblBillChild);
                 BeanUtils.copyProperties(tblTicketDTO, tblBillChild);
                 tblBillChild.setAmount(total);
-                tblBillChild.setTicketPrice(tblTicket1.getPrice());
+                tblBillChild.setTicketPrice(price);
                 tblBillChild.setId(idBaseService.genId());
                 tblBillChild.setBillId(tblBill.getId());
                 tblBillChild.setFatherAmount(tblBill.getAmount());
+                tblBillChild.setReturnableAmount(returnableAmount * ticketNum);
                 tblBillChildMapper.insert(tblBillChild);
+                // 防止价格下单后变更
+                amount -= total;
             }
-            if (amount.intValue() != 0) {
+            if (amount != 0) {
                 return CommonResult.builder().status(400).msg("支付参数有误").build();
             }
             return CommonResult.builder().status(200).msg("下单成功").data(wxPayResultDTO).build();
@@ -232,131 +226,133 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public String wxPayConfirm(String xmlStr) throws Exception {
-        WxPayConformDTO wxPayConform =
-                (WxPayConformDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(xmlStr), WxPayConformDTO.class);
-        if (wxPayConform.getResult_code().equals("SUCCESS")
-                && wxPayConform.getReturn_code().equals("SUCCESS")) {
+        WxPayConformDTO wxPayConform = (WxPayConformDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(xmlStr), WxPayConformDTO.class);
+        if (wxPayConform.getResult_code().equals("SUCCESS") && wxPayConform.getReturn_code().equals("SUCCESS")) {
             long billId = Long.parseLong(wxPayConform.getOut_trade_no());
-            // 处理账单
-            TblBill tblBill = tblBillMapper.selectByPrimaryKey(billId);
-            tblBill.setStatus(1);
-            tblBillMapper.updateByPrimaryKey(tblBill);
-            Long userId = tblBill.getUserId();
-            String phoneNum = tblBill.getPhoneNum();
-            Example example = new Example(TblRecord.class, true, true);
-            example
-                    .createCriteria()
-                    .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%")
-                    .andEqualTo("phoneNum", phoneNum);
-            List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
-            example.clear();
-            example = new Example(TblBillChild.class, true, true);
-            example.createCriteria().andEqualTo("billId", billId);
-            List<TblBillChild> tblBillChildren = tblBillChildMapper.selectByExample(example);
-            for (TblBillChild tblBillChild : tblBillChildren) {
-                // 如果已经购买的再次购买、锁住行程进行添加
-                long recordId = idBaseService.genId();
-                boolean flag = true;
-                if (!tblRecords.isEmpty()) {
-                    for (TblRecord tblRecord : tblRecords) {
-                        if (tblBillChild.getTicketId().longValue() == tblRecord.getTicketId().longValue()) {
-                            // 锁住行程、避免多线程干扰
-                            RLock lock =
-                                    redissonSingle.getLock("gate-record-" + String.valueOf(tblRecord.getId()));
-                            lock.lock(120, TimeUnit.SECONDS);
-                            updateRecord(tblRecord, tblBillChild);
-                            lock.unlock();
-                            flag = false;
-                            recordId = tblRecord.getId();
-                        }
-                    }
-                }
-                // 如果没有、则进行行程添加
-                if (flag) {
-                    example.clear();
-                    example = new Example(VTicket.class, true, true);
-                    example.createCriteria().andEqualTo("ticketId", tblBillChild.getTicketId());
-                    List<VTicket> vTickets = vTicketMapper.selectByExample(example);
-                    VTicket vTicket = vTickets.get(0);
-                    RAtomicLong rAtomicLong =
-                            redissonSingle.getAtomicLong(
-                                    "gate-seq-pdId"
-                                            + vTicket.getProductId()
-                                            + "-paId"
-                                            + vTicket.getParkId()
-                                            + "-time"
-                                            + new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
-                    long seq = rAtomicLong.incrementAndGet();
-
-                    tblRecordMapper.insert(
-                            TblRecord.builder()
-                                    .id(recordId)
-                                    .amount(
-                                            tblBillChild
-                                                    .getTicketPrice()
-                                                    .multiply(new BigDecimal(tblBillChild.getTicketNum())))
-                                    .refundAmount(new BigDecimal("0"))
-                                    .income(
-                                            tblBillChild
-                                                    .getTicketPrice()
-                                                    .multiply(new BigDecimal(tblBillChild.getTicketNum())))
-                                    .ticketId(tblBillChild.getTicketId())
-                                    .time(new Date())
-                                    .userId(userId)
-                                    .availableNum(tblBillChild.getTicketNum())
-                                    .totalNum(tblBillChild.getTicketNum())
-                                    .usedNum(0)
-                                    .phoneNum(tblBill.getPhoneNum())
-                                    .versionId(1)
-                                    .parkId(vTicket.getParkId())
-                                    .ticketPrice(vTicket.getTicketPrice())
-                                    .parkName(vTicket.getParkName())
-                                    .productId(vTicket.getProductId())
-                                    .productName(vTicket.getProductName())
-                                    .ticketName(vTicket.getTicketName())
-                                    .reason("")
-                                    .returnableAmount(
-                                            vTicket
-                                                    .getReturnableAmount()
-                                                    .multiply(new BigDecimal(tblBillChild.getTicketNum())))
-                                    .effectiveNum(tblBillChild.getTicketNum())
-                                    .seq(String.format("%03d", seq))
-                                    .build());
-                }
-                tblBillChild.setStatus(1);
-                tblBillChild.setRecordId(recordId);
-                tblBillChildMapper.updateByPrimaryKey(tblBillChild);
+            // 处理账单&接口幂等
+            int i = tblBillCustomizedMapper.change2PayStatus(billId);
+            if (i == 0) {
+                return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
             }
 
+            TblBill tblBill = tblBillMapper.selectByPrimaryKey(billId);
+            String phoneNum = tblBill.getPhoneNum();
+
+            Example example = new Example(TblRecord.class, true, true);
+            example.createCriteria()
+                    .andLike("time", DateUtil.yyyyMMdd.format(new Date()) + "%")
+                    .andEqualTo("phoneNum", phoneNum);
+            List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+
+            List<TblBillChild> tblBillChildren = MapperUtil.getListByKVs(TblBillChild.class, tblBillChildMapper, "billId", billId);
+            for (TblBillChild tblBillChild : tblBillChildren) {
+                // 子订单幂等
+                int j = tblBillChildCustomizedMapper.change2PayStatus(tblBillChild.getId());
+                if (j == 0) {
+                    continue;
+                }
+                if (CollectionUtils.isEmpty(tblRecords)) {
+                    fistChargeBusiness(tblBillChild);
+                } else {
+                    List<TblRecord> collect = tblRecords.stream().filter(s -> s.getTicketId().equals(tblBillChild.getTicketId())).collect(Collectors.toList());
+                    if (CollectionUtils.isEmpty(collect)) {
+                        fistChargeBusiness(tblBillChild);
+                    } else {
+                        secondChargeBusiness(collect.get(0), tblBillChild);
+                    }
+                }
+            }
             return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
         }
         return null;
     }
 
+    /**
+     * 首充逻辑
+     *
+     * @param tblBillChild
+     */
+    private void fistChargeBusiness(TblBillChild tblBillChild) throws Exception {
+        // 价格以下单时的价格为准
+        long recordId = idBaseService.genId();
+        Integer ticketPrice = tblBillChild.getTicketPrice();
+        Integer returnableAmount = tblBillChild.getReturnableAmount();
+        Integer ticketNum = tblBillChild.getTicketNum();
+        Long productId = tblBillChild.getProductId();
+        Long parkId = tblBillChild.getParkId();
+        Integer payAmount = ticketPrice * ticketNum;
+        // 景区+产品+时间构成票号步长的key
+        RAtomicLong rAtomicLong = redissonSingle.getAtomicLong(RedisConstant.concat(KEY_TICKET_SEQ, parkId.toString(), productId.toString(), DateUtil.yyyyMMdd.format(new Date())));
+        long seq = rAtomicLong.incrementAndGet();
+
+        VTicket vTicket = MapperUtil.getOneByKVs(VTicket.class, vTicketMapper, null, "ticketId", tblBillChild.getTicketId());
+        TblRecord tblRecord = new TblRecord();
+        BeanUtils.copyProperties(vTicket, tblRecord);
+
+        tblRecord.setId(recordId);
+        tblRecord.setTime(new Date());
+        tblRecord.setPhoneNum(tblBillChild.getPhoneNum());
+
+        tblRecord.setIncome(payAmount);
+        tblRecord.setAmount(payAmount);
+        tblRecord.setRefundAmount(0);
+
+        tblRecord.setAvailableNum(ticketNum);
+        tblRecord.setUsedNum(0);
+        tblRecord.setTotalNum(ticketNum);
+
+        tblRecord.setUserId(tblBillChild.getUserId());
+        tblRecord.setVersionId(1);
+
+        tblRecord.setTicketPrice(ticketPrice);
+        // 行程累计可退
+        tblRecord.setReturnableAmount(returnableAmount);
+        tblRecord.setEffectiveNum(ticketNum);
+
+        tblRecord.setReason("");
+        tblRecord.setSeq(String.format("%03d", seq));
+
+        tblRecordMapper.insert(tblRecord);
+    }
+
+    /**
+     * 非首冲逻辑
+     *
+     * @param tblRecord
+     * @param tblBillChild
+     */
+    private void secondChargeBusiness(TblRecord tblRecord, TblBillChild tblBillChild) {
+        Long id = tblRecord.getId();
+        Integer amount = tblBillChild.getAmount();
+        Integer returnableAmount = tblBillChild.getReturnableAmount();
+        Integer ticketNum = tblBillChild.getTicketNum();
+        tblRecordCustomizedMapper.charge2Upd(id, amount, returnableAmount, ticketNum);
+    }
+
+
     @Override
-    public CommonResult ticket(Long productId, Long parkId) {
-        Example example = new Example(VTicket.class, true, true);
-        example.createCriteria().andEqualTo("productId", productId).andEqualTo("parkId", parkId);
-        List<VTicket> vTickets = vTicketMapper.selectByExample(example);
+    public CommonResult ticket(Long productId, Long parkId) throws Exception {
+        List<VTicket> vTickets = MapperUtil.getListByKVs(VTicket.class, vTicketMapper, "productId", productId, "parkId", parkId);
         return CommonResult.builder().status(200).msg("查询成功").data(vTickets).build();
     }
 
     @Override
-    public CommonResult record(String phoneNum, Integer status, Long productId, Long parkId) {
-        return historyRecord(
-                phoneNum, new SimpleDateFormat("yyyy-MM-dd").format(new Date()), status, productId, parkId);
+    public CommonResult record(String phoneNum, Integer status, Long productId, Long parkId) throws Exception {
+        return historyRecord(phoneNum, new SimpleDateFormat("yyyy-MM-dd").format(new Date()), status, productId, parkId);
     }
 
     @Override
-    public CommonResult historyRecord(
-            String phoneNum, String date, Integer status, Long productId, Long parkId) {
+    public CommonResult historyRecord(String phoneNum, String date, Integer status, Long productId, Long parkId) {
         Example example = new Example(TblRecord.class, true, true);
         Example.Criteria criteria = example.createCriteria();
         if (0 == status) {
             criteria.andGreaterThan("availableNum", 0);
         }
-        if (-1L != productId.longValue() || -1L != parkId.longValue()) {
-            criteria.andEqualTo("productId", productId).andEqualTo("parkId", parkId);
+        if (-1L != productId) {
+            criteria.andEqualTo("productId", productId);
+        }
+        if (-1L != parkId) {
+            criteria.andEqualTo("parkId", parkId);
         }
         criteria.andLike("time", date + "%").andEqualTo("phoneNum", phoneNum);
         List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
@@ -366,312 +362,181 @@ public class UserServiceImpl implements UserService {
         return CommonResult.builder().status(200).msg("查询成功").data(tblRecords).build();
     }
 
-    // 判断整数
-    private static Pattern pattern = Pattern.compile("[0-9]*");
-
-    private static boolean isNumeric(String str) {
-        return pattern.matcher(str).matches();
-    }
-
+    @RecordLock
     @Override
     @Transactional
-    public CommonResult refund(TblRefundDTO tblRefundDTO) throws Exception {
-        // 校验入参
-        ValidationResult result = validator.validate(tblRefundDTO);
-        if (result.isHasErrors()) {
-            return CommonResult.builder().status(400).msg("退款参数有误").build();
-        }
-        // 票数必须是整数
-        if (!isNumeric(tblRefundDTO.getTicketNum() + "")) {
-            return CommonResult.builder().status(400).msg("票数必须是整数").build();
-        }
+    public CommonResult refund(Long recordId, TblRefundDTO tblRefundDTO) throws Exception {
         // 票数合规检测
-        Long recordId = tblRefundDTO.getRecordId();
-        RLock refundLock = redissonSingle.getLock("gate-refund-" + recordId);
-        if (!refundLock.tryLock(0, 60, TimeUnit.SECONDS)) {
-            return CommonResult.builder().status(400).msg("正在退款,请稍等").build();
-        }
         Integer ticketNum = tblRefundDTO.getTicketNum();
         TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
         if (tblRecord.getAvailableNum() < ticketNum) {
-            refundLock.unlock();
             return CommonResult.builder().status(400).msg("超过可退票数").build();
         }
         // 退款金额计算
-        BigDecimal ticketPrice = tblRecord.getTicketPrice();
-        BigDecimal totalRefundAmount = ticketPrice.multiply(new BigDecimal(String.valueOf(ticketNum)));
-        if (tblRecord.getIncome().compareTo(totalRefundAmount) == -1) {
-            refundLock.unlock();
+        Integer ticketPrice = tblRecord.getTicketPrice();
+        Integer income = tblRecord.getIncome();
+        Integer totalRefundAmount = ticketPrice * ticketNum;
+
+        if (income - totalRefundAmount < 0) {
             return CommonResult.builder().status(400).msg("退款金额有误").build();
         }
-        CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount, true, false);
+
+        CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
         // 退款成功修改有效票数
         if (commonResult.getStatus() == 200) {
-            tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
-            tblRecord.setEffectiveNum(tblRecord.getEffectiveNum() - ticketNum);
-            tblRecordMapper.updateByPrimaryKey(tblRecord);
+            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum);
         }
-        refundLock.unlock();
         return commonResult;
     }
 
-
+    @RecordLock
     @Override
     @Transactional
-    public CommonResult specialRefund(TblSpecialRefundDTO tblSpecialRefundDTO) throws Exception {
-        // 校验入参
-        ValidationResult result = validator.validate(tblSpecialRefundDTO);
-        if (result.isHasErrors()) {
-            return CommonResult.builder().status(400).msg("退款参数有误").build();
-        }
-        // 金额合规检测
-        Long recordId = tblSpecialRefundDTO.getRecordId();
-        BigDecimal refundAmount = tblSpecialRefundDTO.getRefundAmount();
-        RLock refundLock = redissonSingle.getLock("gate-refund-" + recordId);
-        if (!refundLock.tryLock(0, 60, TimeUnit.SECONDS)) {
-            return CommonResult.builder().status(400).msg("正在退款,请稍等").build();
-        }
+    public CommonResult specialRefund(Long recordId, TblSpecialRefundDTO tblSpecialRefundDTO) throws Exception {
+        int refundAmount = tblSpecialRefundDTO.getRefundAmount();
         TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
         if (null == tblRecord) {
-            refundLock.unlock();
             return CommonResult.builder().status(400).msg("票信息有误").build();
         }
-        if (tblRecord.getIncome().compareTo(refundAmount) == -1) {
-            refundLock.unlock();
+        if (tblRecord.getIncome() < refundAmount) {
             return CommonResult.builder().status(400).msg("退款金额有误").build();
         }
         // 如果是退押金引发的指定金额退款、不记录原因
-        CommonResult commonResult =
-                circleRefund(
-                        tblRecord,
-                        refundAmount,
-                        false,
-                        null == tblSpecialRefundDTO.getFlag() ? true : tblSpecialRefundDTO.getFlag());
-        refundLock.unlock();
+        CommonResult commonResult = circleRefund(tblRecord, refundAmount);
+        // 核销所有票
+        if (commonResult.getStatus() == 200) {
+            tblRecordCustomizedMapper.cancellation2Upd(recordId);
+        }
         return commonResult;
     }
 
-    private CommonResult circleRefund(
-            TblRecord tblRecord,
-            BigDecimal totalRefundAmount,
-            Boolean cancellationFlag,
-            Boolean reasonFlag)
-            throws Exception {
-        BigDecimal shouldRefundAmount = totalRefundAmount;
-        // 循环退款
-        Example example = new Example(TblBillChild.class, true, true);
-        example.createCriteria().andEqualTo("recordId", tblRecord.getId()).andEqualTo("status", 1);
-        List<TblBillChild> tblBillChildren = tblBillChildMapper.selectByExample(example);
-        for (TblBillChild tblBillChild : tblBillChildren) {
-            if (totalRefundAmount.compareTo(new BigDecimal("0")) < 1) {
-                break;
-            }
-            // 本单可退
-            BigDecimal billCanRefund = tblBillChild.getAmount().subtract(tblBillChild.getRefundAmount());
-            if (billCanRefund.compareTo(new BigDecimal("0")) < 1) {
-                continue;
-            }
-            BigDecimal billRealRefund = new BigDecimal("0");
-            long refundId = idBaseService.genId();
-            TblTicket tblTicket = tblTicketMapper.selectByPrimaryKey(tblBillChild.getTicketId());
-            WxPayRefundDTO wxPayRefundDTO =
-                    WxPayRefundDTO.builder()
-                            .mch_id(WX_PAY_MCH)
-                            .appid(WX_APP_ID)
-                            .nonce_str(WXPayUtil.generateNonceStr())
-                            .out_trade_no(String.valueOf(tblBillChild.getBillId()))
-                            .out_refund_no(String.valueOf(refundId))
-                            .total_fee(tblBillChild.getFatherAmount().multiply(new BigDecimal("100")).intValue())
-                            .build();
-            if (billCanRefund.compareTo(totalRefundAmount) < 1) {
-                totalRefundAmount = totalRefundAmount.subtract(billCanRefund);
-                billRealRefund = billCanRefund;
-            } else {
-                billRealRefund = totalRefundAmount;
-                totalRefundAmount = new BigDecimal("0");
-            }
-            wxPayRefundDTO.setRefund_fee(billRealRefund.multiply(new BigDecimal("100")).intValue());
-            WxPayRefundResultDTO wxPayRefundResultDTO =
-                    (WxPayRefundResultDTO)
-                            WXPayUtil.mapToObject(
-                                    WXPayUtil.xmlToMap(
-                                            wxRefundRestTemplate.postForObject(
-                                                    DOMAIN_API + REFUND_URL_SUFFIX,
-                                                    WXPayUtil.generateSignedXml(
-                                                            WXPayUtil.objectToMap(wxPayRefundDTO), WX_PAY_KEY),
-                                                    String.class)),
-                                    WxPayRefundResultDTO.class);
-            if (wxPayRefundResultDTO.getResult_code().equals("SUCCESS")
-                    && wxPayRefundResultDTO.getReturn_code().equals("SUCCESS")) {
-                TblBill tblBill = tblBillMapper.selectByPrimaryKey(tblBillChild.getBillId());
-                // 充值单号
-                tblBill.setRefundAmount(tblBill.getRefundAmount().add(billRealRefund));
-                tblBillMapper.updateByPrimaryKeySelective(tblBill);
-                tblBillChild.setRefundAmount(tblBillChild.getRefundAmount().add(billRealRefund));
-                tblBillChildMapper.updateByPrimaryKey(tblBillChild);
-                // 退款单号
-                TblBillRefund tblBillRefund =
-                        TblBillRefund.builder()
-                                .id(refundId)
-                                .amount(billRealRefund)
-                                .billId(tblBillChild.getBillId())
-                                .time(new Date())
-                                .build();
-                tblBillRefundMapper.insert(tblBillRefund);
-                // 核销票数
-                if (cancellationFlag) {
-                    RLock lock = redissonSingle.getLock("gate-record-" + String.valueOf(tblRecord.getId()));
-                    lock.lock(120, TimeUnit.SECONDS);
-                    TblBillChild cancellation = new TblBillChild();
-                    cancellation.setTicketPrice(tblBillChild.getTicketPrice().multiply(new BigDecimal("-1")));
-                    cancellation.setTicketNum(
-                            billRealRefund.divide(tblBillChild.getTicketPrice()).intValue());
-                    updateRecord(tblRecord, cancellation);
-                    lock.unlock();
+    /**
+     * 循环退款
+     *
+     * @param tblRecord
+     * @param totalRefundAmount
+     * @return
+     * @throws Exception
+     */
+    private CommonResult circleRefund(TblRecord tblRecord, Integer totalRefundAmount) throws Exception {
+        List<TblBillChild> tblBillChildren = MapperUtil.getListByKVs(TblBillChild.class, tblBillChildMapper, "recordId", tblRecord.getId(), "status", 1);
+        if (!CollectionUtils.isEmpty(tblBillChildren)) {
+            Map<Long, List<TblBillChild>> map = tblBillChildren.stream().collect(Collectors.groupingBy(TblBillChild::getBillId));
+            if (!CollectionUtils.isEmpty(map)) {
+                for (Long billId : map.keySet()) {
+                    List<TblBillChild> childList = map.get(billId);
+                    int totalRefund = 0;
+                    for (TblBillChild tblBillChild : childList) {
+                        int billCanRefund = tblBillChild.getAmount() - tblBillChild.getRefundAmount();
+                        if (billCanRefund <= 0) {
+                            continue;
+                        }
+                        // 得到本单退款金额
+                        int billRealRefund;
+                        if (billCanRefund <= totalRefundAmount) {
+                            totalRefundAmount -= billCanRefund;
+                            billRealRefund = billCanRefund;
+                        } else {
+                            totalRefundAmount = 0;
+                            billRealRefund = totalRefundAmount;
+                        }
+                        totalRefund += billRealRefund;
+                        // 账单变更
+                        tblBillCustomizedMapper.refund2Upd(tblBillChild.getBillId(), billRealRefund);
+                        tblBillChildCustomizedMapper.refund2Upd(tblBillChild.getId(), billRealRefund);
+                    }
+                    refund(billId, childList.get(0).getFatherAmount(), totalRefund);
                 }
             }
         }
-        // 如果是指定金额退款、全部核销至零
-        if (!cancellationFlag) {
-            cancellationAllTicket(tblRecord, shouldRefundAmount, true, reasonFlag);
-        }
-        if (totalRefundAmount.compareTo(new BigDecimal("0")) == 0) {
+        if (totalRefundAmount == 0) {
             return CommonResult.builder().status(200).msg("退款成功").build();
         } else {
             return CommonResult.builder().status(400).msg("部分退款成功,请联系管理员处理").build();
         }
     }
 
-    @Override
-    public CommonResult cancellation(Long recordId) {
-        RLock lock = redissonSingle.getLock("gate-record-" + recordId);
-        try {
-            lock.lock(120, TimeUnit.SECONDS);
-            TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
-            if (null == tblRecord) {
-                return CommonResult.builder().status(10000).msg("无效票").build();
-            }
-            if (tblRecord.getAvailableNum() < 1) {
-                return CommonResult.builder().status(400).msg("核销失败,票数不足").build();
-            }
-            // 不是退款引发的
-            updateRecord(
-                    tblRecord,
-                    TblBillChild.builder().ticketPrice(new BigDecimal("-1000000000")).ticketNum(1).build());
-            TblCheck tblCheck = new TblCheck();
-            BeanUtils.copyProperties(tblRecord, tblCheck);
-            tblCheck.setRecordId(tblRecord.getId());
-            tblCheck.setTime(new Date());
-            tblCheck.setTicketNum(1);
-            tblCheck.setId(idBaseService.genId());
-            tblCheckMapper.insert(tblCheck);
-            return CommonResult.builder().status(200).msg(tblRecord.getTicketName()).build();
-        } catch (Exception e) {
-            log.warn("核销发生异常:" + recordId);
-            e.printStackTrace();
-        } finally {
-            lock.unlock();
+    /**
+     * 微信退款
+     *
+     * @param billId
+     * @param totalFee
+     * @param totalRefund
+     * @throws Exception
+     */
+    private void refund(Long billId, Integer totalFee, Integer totalRefund) throws Exception {
+        long refundId = idBaseService.genId();
+        WxPayRefundDTO wxPayRefundDTO = WxPayRefundDTO.builder()
+                .mch_id(WX_PAY_MCH)
+                .appid(WX_APP_ID)
+                .nonce_str(WXPayUtil.generateNonceStr())
+                .out_trade_no(String.valueOf(billId))
+                .out_refund_no(String.valueOf(refundId))
+                .total_fee(totalFee)
+                .build();
+        wxPayRefundDTO.setRefund_fee(totalRefund);
+
+        WxPayRefundResultDTO wxPayRefundResultDTO = (WxPayRefundResultDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(wxRefundRestTemplate.postForObject(DOMAIN_API + REFUND_URL_SUFFIX, WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxPayRefundDTO), WX_PAY_KEY), String.class)), WxPayRefundResultDTO.class);
+        if (wxPayRefundResultDTO.getResult_code().equals("SUCCESS") && wxPayRefundResultDTO.getReturn_code().equals("SUCCESS")) {
+            TblBillRefund tblBillRefund = TblBillRefund.builder().id(refundId).amount(totalRefund).billId(billId).time(new Date()).build();
+            tblBillRefundMapper.insert(tblBillRefund);
+        } else {
+            throw new RuntimeException("退款发生异常");
         }
-        return CommonResult.builder().status(400).msg("核销失败,票数不足").build();
     }
 
+    @Transactional
     @Override
-    public CommonResult cancellationByCard(String phoneNum, Long parkId, Long productId, String id) {
+    public CommonResult cancellation(Long recordId) throws Exception {
+        TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
+        if (null == tblRecord) {
+            return CommonResult.builder().status(10000).msg("无效票").build();
+        }
+        if (tblRecord.getAvailableNum() < 1) {
+            return CommonResult.builder().status(400).msg("核销失败,票数不足").build();
+        }
+        tblRecordCustomizedMapper.cancellation2Upd(recordId);
+        dealCheckLog(tblRecord);
+        return CommonResult.builder().status(200).msg("核销成功").build();
+    }
+
+    @Transactional
+    @Override
+    public CommonResult cancellationByCard(String phoneNum, Long parkId, Long productId, String id) throws Exception {
         // 查出所有有票的行程
         CommonResult commonResult = record(phoneNum, 0, productId, parkId);
         if (commonResult.getStatus() == 400) {
             return commonResult;
         }
-        List<TblRecord> tblRecords =
-                JSONArray.parseArray(JSON.toJSONString(commonResult.getData()), TblRecord.class);
-        List<TblRecord> tblRecords_ = new ArrayList<>();
-        // 遍历
-        for (TblRecord tblRecord : tblRecords) {
-            // 传入胸卡方便后续记录
-            RBucket<String> rBucket =
-                    redissonSingle.getBucket("gate-check-" + String.valueOf(tblRecord.getId()));
-            rBucket.set(id, 120, TimeUnit.SECONDS);
-            // todo 其中一笔退款失败的问题
-            if (tblRecord.getReturnableAmount().intValue() > 0) {
-                // 如果是汉服，使用指定金额退还押金
-                try {
-                    specialRefund(
-                            TblSpecialRefundDTO.builder()
-                                    .managerId(1L)
-                                    .phoneNum(tblRecord.getPhoneNum())
-                                    .recordId(tblRecord.getId())
-                                    .refundAmount(tblRecord.getReturnableAmount())
-                                    .flag(false)
-                                    .build());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            } else {
-                // 核销所有的票,押金->0,不记录原因
-                tblRecords_.add(cancellationAllTicket(tblRecord, new BigDecimal("0"), true, false));
-            }
+        List<TblRecord> tblRecords = JSONArray.parseArray(JSON.toJSONString(commonResult.getData()), TblRecord.class);
+        if (!CollectionUtils.isEmpty(tblRecords)) {
+            List<Long> collect = tblRecords.stream().map(TblRecord::getId).collect(Collectors.toList());
+            tblRecordCustomizedMapper.cancellationAll2Upd(collect);
+            tblRecords.forEach(this::dealCheckLog);
+            // 退款 todo
         }
-        return CommonResult.builder().status(200).msg("核销成功").data(tblRecords_).build();
+        return CommonResult.builder().status(200).msg("核销成功").data(null).build();
     }
 
     /**
-     * 核销所有的票，不减少有效票数
+     * 核销记录
      *
-     * @param tblRecord            行程
-     * @param shouldRefundAmount   应退金额
-     * @param returnableAmountFlag 是否为指定金额退款
-     * @param reasonFlag           汉服胸卡使用指定金额退款但是不做记录
-     * @return 核销后的行程
+     * @param tblRecord
      */
-    private TblRecord cancellationAllTicket(
-            TblRecord tblRecord,
-            BigDecimal shouldRefundAmount,
-            Boolean returnableAmountFlag,
-            Boolean reasonFlag) {
-        RLock lock = redissonSingle.getLock("gate-record-" + String.valueOf(tblRecord.getId()));
-        lock.lock(120, TimeUnit.SECONDS);
-        // 锁住之后再查询,返回自己真实核销的行程
-        tblRecord = tblRecordMapper.selectByPrimaryKey(tblRecord.getId());
-        RBucket<String> rBucket =
-                redissonSingle.getBucket("gate-check-" + String.valueOf(tblRecord.getId()));
-        String cardNo = rBucket.get() == null ? "" : rBucket.get();
-        // 核销记录
-        if (tblRecord.getAvailableNum() > 0) {
-            tblCheckMapper.insert(
-                    TblCheck.builder()
-                            .time(new Date())
-                            .phoneNum(tblRecord.getPhoneNum())
-                            .id(idBaseService.genId())
-                            .recordId(tblRecord.getId())
-                            .ticketId(tblRecord.getTicketId())
-                            .ticketNum(tblRecord.getAvailableNum())
-                            .cardNo(cardNo)
-                            .build());
-        }
-        // 票->0
-        tblRecord.setUsedNum(tblRecord.getTotalNum());
-        tblRecord.setAvailableNum(0);
-        // 费用
-        tblRecord.setRefundAmount(tblRecord.getRefundAmount().add(shouldRefundAmount));
-        tblRecord.setIncome(tblRecord.getIncome().subtract(shouldRefundAmount));
-        // 押金->0
-        if (returnableAmountFlag) {
-            tblRecord.setReturnableAmount(new BigDecimal("0"));
-        }
-        // 不是退押金需要记录原因
-        if (reasonFlag) {
-            tblRecord.setReason("指定金额退款");
-        }
-        tblRecordMapper.updateByPrimaryKey(tblRecord);
-        lock.unlock();
-        return tblRecord;
+    private void dealCheckLog(TblRecord tblRecord) {
+        TblCheck tblCheck = new TblCheck();
+        BeanUtils.copyProperties(tblRecord, tblCheck);
+        tblCheck.setRecordId(tblRecord.getId());
+        tblCheck.setTime(new Date());
+        tblCheck.setTicketNum(tblRecord.getEffectiveNum());
+        tblCheck.setId(idBaseService.genId());
+        tblCheckMapper.insert(tblCheck);
     }
 
     @Override
     public CommonResult selectCancellation(String phoneNum) {
         Example example = new Example(VCheck.class, true, true);
-        example
-                .createCriteria()
+        example.createCriteria()
                 .andEqualTo("phoneNum", phoneNum)
                 .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
         List<VCheck> vChecks = vCheckMapper.selectByExample(example);
@@ -681,8 +546,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public CommonResult selectBills(String phoneNum) {
         Example example = new Example(TblBill.class, true, true);
-        example
-                .createCriteria()
+        example.createCriteria()
                 .andEqualTo("phoneNum", phoneNum)
                 .andEqualTo("status", 1)
                 .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
@@ -690,57 +554,4 @@ public class UserServiceImpl implements UserService {
         return CommonResult.builder().status(200).msg("查询成功").data(tblBills).build();
     }
 
-    private void updateRecord(TblRecord tblRecord, TblBillChild tblBillChild) {
-        Integer availableNum = tblRecord.getAvailableNum();
-        Integer totalNum = tblRecord.getTotalNum();
-        Integer effectiveNum = tblRecord.getEffectiveNum();
-        BigDecimal amount = tblRecord.getAmount();
-        BigDecimal income = tblRecord.getIncome();
-        BigDecimal returnableAmount = tblRecord.getReturnableAmount();
-        if (tblBillChild.getTicketPrice().compareTo(new BigDecimal(0)) < 1) {
-            // 核销
-            availableNum -= tblBillChild.getTicketNum();
-            // 如果是退款引发的核销需要减少收入
-            if (tblBillChild.getTicketPrice().compareTo(new BigDecimal("-1000000000")) != 0) {
-                income =
-                        income.add(
-                                tblBillChild
-                                        .getTicketPrice()
-                                        .multiply(new BigDecimal(tblBillChild.getTicketNum())));
-                TblTicket tblTicket = tblTicketMapper.selectByPrimaryKey(tblRecord.getTicketId());
-                returnableAmount =
-                        returnableAmount.subtract(
-                                tblTicket
-                                        .getReturnableAmount()
-                                        .multiply(new BigDecimal(tblBillChild.getTicketNum())));
-            }
-        } else {
-            // 充值逻辑
-            availableNum += tblBillChild.getTicketNum();
-            effectiveNum += tblBillChild.getTicketNum();
-            totalNum += tblBillChild.getTicketNum();
-            BigDecimal total =
-                    tblBillChild.getTicketPrice().multiply(new BigDecimal(tblBillChild.getTicketNum()));
-            amount = amount.add(total);
-            income = income.add(total);
-            TblTicket tblTicket = tblTicketMapper.selectByPrimaryKey(tblRecord.getTicketId());
-            returnableAmount =
-                    returnableAmount.add(
-                            tblTicket
-                                    .getReturnableAmount()
-                                    .multiply(new BigDecimal(tblBillChild.getTicketNum())));
-        }
-        Integer usedNum = totalNum - availableNum;
-        BigDecimal refundAmount = amount.subtract(income);
-        // 更新行程表
-        tblRecord.setTotalNum(totalNum);
-        tblRecord.setAvailableNum(availableNum);
-        tblRecord.setUsedNum(usedNum);
-        tblRecord.setAmount(amount);
-        tblRecord.setRefundAmount(refundAmount);
-        tblRecord.setIncome(income);
-        tblRecord.setEffectiveNum(effectiveNum);
-        tblRecord.setReturnableAmount(returnableAmount);
-        tblRecordMapper.updateByPrimaryKey(tblRecord);
-    }
 }

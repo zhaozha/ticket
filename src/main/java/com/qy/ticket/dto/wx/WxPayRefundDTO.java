@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * @author zhaozha
  * @date 2020/1/10 上午10:25
@@ -13,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class WxPayRefundDTO {
+public class WxPayRefundDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String appid;
     private String mch_id;
     private String sub_mch_id;

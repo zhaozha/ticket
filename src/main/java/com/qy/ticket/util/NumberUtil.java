@@ -28,6 +28,20 @@ public class NumberUtil {
         return b1.movePointRight(2).intValue();
     }
 
+    /**
+     * 四舍五入
+     *
+     * @param a1
+     * @param a2
+     * @return
+     */
+    public static int multiplyHalfUp(double a1, double a2) {
+        return multiply(a1, a2, BigDecimal.ROUND_HALF_UP);
+    }
 
-
+    public static int multiply(double a1, double a2, int type) {
+        BigDecimal b1 = new BigDecimal(a1);
+        BigDecimal b2 = new BigDecimal(a2);
+        return b1.multiply(b2).setScale(0, type).intValue();
+    }
 }

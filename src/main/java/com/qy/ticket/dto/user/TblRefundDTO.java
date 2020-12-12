@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 
 /**
  * @author zhaozha
@@ -17,7 +18,8 @@ import javax.validation.constraints.NotNull;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblRefundDTO {
+public class TblRefundDTO implements Serializable {
+  private static final long serialVersionUID = 1L;
   @NotBlank(message = "手机号不能为空")
   private String phoneNum;
 

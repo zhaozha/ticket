@@ -12,10 +12,13 @@ public class RedisConstant {
     public static final String MATCH_ALL = COLON + "*";
     // 用户token
     public static final String KEY_USER_TOKEN = "user:token";
-    // 用户静默登录
-    public static final String KEY_USER_SESSION= "user:session";
     // 全局锁(保证用户单线程操作指定资源)
     public static final String KEY_USER_DISTRIBUTED_LOCK = "user:distribute:lock";
+    // 行程锁
+    public static final String KEY_RECORD_LOCK = "user:record:lock";
+    // 当日票号步长
+    public static final String KEY_TICKET_SEQ = "user:ticker:seq";
+
 
     public static String matchAll(String key) {
         return key + MATCH_ALL;

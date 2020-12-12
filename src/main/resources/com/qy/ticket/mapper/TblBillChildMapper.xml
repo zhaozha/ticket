@@ -18,6 +18,7 @@
     <result column="ticket_id" jdbcType="BIGINT" property="ticketId" />
     <result column="ticket_num" jdbcType="INTEGER" property="ticketNum" />
     <result column="ticket_price" jdbcType="INTEGER" property="ticketPrice" />
+    <result column="returnable_amount" jdbcType="INTEGER" property="returnableAmount" />
     <result column="bill_id" jdbcType="BIGINT" property="billId" />
     <result column="record_id" jdbcType="BIGINT" property="recordId" />
     <result column="father_amount" jdbcType="INTEGER" property="fatherAmount" />

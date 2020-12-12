@@ -1,5 +1,7 @@
 package com.qy.ticket.controller;
 
+import com.qy.ticket.annotation.IgnoreUserToken;
+import com.qy.ticket.annotation.UserLock;
 import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.user.TblBillDTO;
 import com.qy.ticket.dto.user.TblRefundDTO;
@@ -17,90 +19,64 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class UserController {
-  private final UserServiceImpl userService;
+    private final UserServiceImpl userService;
 
-  @GetMapping("/openid/code/{code}")
-  public CommonResult wxLogin(@PathVariable String code) {
-    return userService.wxLogin(code);
-  }
-
-  @PostMapping("/wx/register")
-  public CommonResult wxRegister(@RequestBody TblUser tblUser) {
-    return userService.wxRegister(tblUser);
-  }
-
-  @PostMapping("/wx/unifiedorder")
-  public CommonResult unifiedorder(@RequestBody TblBillDTO tblBillDTO) {
-    try {
-      return userService.unifiedorder(tblBillDTO);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return CommonResult.builder().status(500).msg("系统异常").build();
+    @IgnoreUserToken
+    @GetMapping("/openid/code/{code}")
+    public CommonResult wxLogin(@PathVariable String code) throws Exception {
+        return userService.wxLogin(code);
     }
-  }
 
-  @PostMapping("/wx/refund")
-  public CommonResult refund(@RequestBody TblRefundDTO tblRefundDTO) {
-    try {
-      return userService.refund(tblRefundDTO);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return CommonResult.builder().status(500).msg("系统异常").build();
+    @IgnoreUserToken
+    @PostMapping("/wx/register")
+    public CommonResult wxRegister(@RequestBody TblUser tblUser) throws Exception {
+        return userService.wxRegister(tblUser);
     }
-  }
 
-  @PostMapping("/wx/special/refund")
-  public CommonResult specialRefund(@RequestBody TblSpecialRefundDTO tblSpecialRefundDTO) {
-    try {
-      return userService.specialRefund(tblSpecialRefundDTO);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return CommonResult.builder().status(500).msg("系统异常").build();
+    @UserLock
+    @PostMapping("/wx/unifiedorder")
+    public CommonResult unifiedorder(@RequestBody TblBillDTO tblBillDTO) throws Exception {
+        return userService.unifiedorder(tblBillDTO);
     }
-  }
 
-  @GetMapping("/ticket/productId/{productId}/parkId/{parkId}")
-  public CommonResult ticket(@PathVariable Long productId, @PathVariable Long parkId) {
-    return userService.ticket(productId, parkId);
-  }
+    @PostMapping("/wx/refund")
+    public CommonResult refund(@RequestBody TblRefundDTO tblRefundDTO) throws Exception {
+        return userService.refund(tblRefundDTO.getRecordId(), tblRefundDTO);
+    }
 
-  @GetMapping("/record/phoneNum/{phoneNum}/status/{status}/productId/{productId}/parkId/{parkId}")
-  public CommonResult record(
-      @PathVariable String phoneNum,
-      @PathVariable Integer status,
-      @PathVariable Long productId,
-      @PathVariable Long parkId) {
-    return userService.record(phoneNum, status, productId, parkId);
-  }
+    @PostMapping("/wx/special/refund")
+    public CommonResult specialRefund(@RequestBody TblSpecialRefundDTO tblSpecialRefundDTO) throws Exception {
+        return userService.specialRefund(tblSpecialRefundDTO.getRecordId(), tblSpecialRefundDTO);
+    }
 
-  @GetMapping(
-      "/history/record/phoneNum/{phoneNum}/date/{date}/status/{status}/productId/{productId}/parkId/{parkId}")
-  public CommonResult historyRecord(
-      @PathVariable String phoneNum,
-      @PathVariable String date,
-      @PathVariable Integer status,
-      @PathVariable Long productId,
-      @PathVariable Long parkId) {
-    return userService.historyRecord(phoneNum, date, status, productId, parkId);
-  }
+    @GetMapping("/ticket/productId/{productId}/parkId/{parkId}")
+    public CommonResult ticket(@PathVariable Long productId, @PathVariable Long parkId) throws Exception {
+        return userService.ticket(productId, parkId);
+    }
 
-  @GetMapping("/cancellation/phoneNum/{phoneNum}")
-  public CommonResult selectCancellation(@PathVariable String phoneNum) {
-    return userService.selectCancellation(phoneNum);
-  }
+    @GetMapping("/record/phoneNum/{phoneNum}/status/{status}/productId/{productId}/parkId/{parkId}")
+    public CommonResult record(@PathVariable String phoneNum, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
+        return userService.record(phoneNum, status, productId, parkId);
+    }
 
-  @GetMapping("/bill/phoneNum/{phoneNum}")
-  public CommonResult selectBills(@PathVariable String phoneNum) {
-    return userService.selectBills(phoneNum);
-  }
+    @GetMapping("/history/record/phoneNum/{phoneNum}/date/{date}/status/{status}/productId/{productId}/parkId/{parkId}")
+    public CommonResult historyRecord(@PathVariable String phoneNum, @PathVariable String date, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
+        return userService.historyRecord(phoneNum, date, status, productId, parkId);
+    }
 
-  @GetMapping(
-      "/cancellation/card/phoneNum/{phoneNum}/parkId/{parkId}/productId/{productId}/id/{id}")
-  public CommonResult cancellationByCard(
-      @PathVariable String phoneNum,
-      @PathVariable Long parkId,
-      @PathVariable Long productId,
-      @PathVariable String id) {
-    return userService.cancellationByCard(phoneNum, parkId, productId, id);
-  }
+    @GetMapping("/cancellation/phoneNum/{phoneNum}")
+    public CommonResult selectCancellation(@PathVariable String phoneNum) throws Exception {
+        return userService.selectCancellation(phoneNum);
+    }
+
+    @GetMapping("/bill/phoneNum/{phoneNum}")
+    public CommonResult selectBills(@PathVariable String phoneNum) throws Exception {
+        return userService.selectBills(phoneNum);
+    }
+
+    @UserLock
+    @GetMapping("/cancellation/card/phoneNum/{phoneNum}/parkId/{parkId}/productId/{productId}/id/{id}")
+    public CommonResult cancellationByCard(@PathVariable String phoneNum, @PathVariable Long parkId, @PathVariable Long productId, @PathVariable String id) throws Exception {
+        return userService.cancellationByCard(phoneNum, parkId, productId, id);
+    }
 }

@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 
 /**
  * @author zhaozha
@@ -14,7 +16,8 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class LoginPowerDTO {
+public class LoginPowerDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Long productId;
     private Long parkId;
     private String parkName;

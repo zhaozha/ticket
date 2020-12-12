@@ -170,7 +170,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.qy.ticket.GateApplication</mainClass>
+                    <mainClass>com.qy.ticket.TicketApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>

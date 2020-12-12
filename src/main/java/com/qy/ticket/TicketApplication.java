@@ -8,9 +8,8 @@ import tk.mybatis.spring.annotation.MapperScan;
 @SpringBootApplication
 @MapperScan(basePackages="com.qy.ticket")
 @EnableScheduling
-public class GateApplication {
-
+public class TicketApplication {
   public static void main(String[] args) {
-    SpringApplication.run(GateApplication.class, args);
+    SpringApplication.run(TicketApplication.class, args);
   }
 }

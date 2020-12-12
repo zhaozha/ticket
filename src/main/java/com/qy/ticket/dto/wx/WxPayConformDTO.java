@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * @author zhaozha
  * @date 2020/1/7 下午1:27
@@ -14,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class WxPayConformDTO {
+public class WxPayConformDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     @JacksonXmlProperty(localName = "return_code")
     private String return_code;
     @JacksonXmlProperty(localName = "return_msg")

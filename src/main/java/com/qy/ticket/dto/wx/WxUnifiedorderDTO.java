@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * @author zhaozha
  * @date 2020/1/7 下午12:07
@@ -13,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class WxUnifiedorderDTO {
+public class WxUnifiedorderDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String appid;
     private String mch_id;
     private String nonce_str;

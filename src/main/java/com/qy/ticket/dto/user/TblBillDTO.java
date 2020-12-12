@@ -1,5 +1,9 @@
 package com.qy.ticket.dto.user;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.qy.ticket.common.FeeDeserialize;
+import com.qy.ticket.common.FeeSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -19,7 +24,8 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblBillDTO {
+public class TblBillDTO implements Serializable {
+  private static final long serialVersionUID = 1L;
   @NotNull(message = "手机号不能为空")
   private Long userId;
 
@@ -28,7 +34,9 @@ public class TblBillDTO {
 
   @NotNull(message = "下单金额不能为空")
   @Min(value = 0, message = "下单金额必须大于0")
-  private BigDecimal amount;
+  @JsonSerialize(using = FeeSerialize.class)
+  @JsonDeserialize(using = FeeDeserialize.class)
+  private Integer amount;
 
   @NotBlank(message = "openid不能为空")
   private String openId;

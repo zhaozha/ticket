@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import javax.persistence.Column;
+import java.io.Serializable;
 
 /**
  * @author zhaozha
@@ -15,7 +16,8 @@ import javax.persistence.Column;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class AddManagerDTO {
+public class AddManagerDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String phoneNum;
     private String name;
     private Integer level;

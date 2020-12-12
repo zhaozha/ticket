@@ -1,5 +1,9 @@
 package com.qy.ticket.dto.user;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.qy.ticket.common.FeeDeserialize;
+import com.qy.ticket.common.FeeSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
@@ -18,7 +23,8 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblSpecialRefundDTO {
+public class TblSpecialRefundDTO implements Serializable {
+  private static final long serialVersionUID = 1L;
   @NotBlank(message = "手机号不能为空")
   private String phoneNum;
 
@@ -29,7 +35,8 @@ public class TblSpecialRefundDTO {
   private Long managerId;
 
   @NotNull(message = "退款金额不可为空")
-  private BigDecimal refundAmount;
-
-  private Boolean flag;
+  @Min(value = 0, message = "退款金额必须大于0")
+  @JsonSerialize(using = FeeSerialize.class)
+  @JsonDeserialize(using = FeeDeserialize.class)
+  private Integer refundAmount;
 }

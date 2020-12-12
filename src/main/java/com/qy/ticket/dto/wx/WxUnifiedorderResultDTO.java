@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * @author zhaozha
  * @date 2020/1/7 下午12:08
@@ -13,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class WxUnifiedorderResultDTO {
+public class WxUnifiedorderResultDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     // 此字段是通信标识，非交易标识，交易是否成功需要查看result_code来判断
     private String return_code;
     private String return_msg;

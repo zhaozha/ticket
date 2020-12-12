@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 
 /**
  * @author zhaozha
@@ -16,7 +17,8 @@ import javax.validation.constraints.NotNull;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblTicketDTO {
+public class TblTicketDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     @NotNull(message = "票编号不可为空")
     private Long ticketId;
 

@@ -95,6 +95,14 @@ public class TblBillChild implements Serializable {
     private Integer ticketPrice;
 
     /**
+     * 可退金额(分)
+     */
+    @Column(name = "returnable_amount")
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer returnableAmount;
+
+    /**
      * 父账单编号
      */
     @Column(name = "bill_id")

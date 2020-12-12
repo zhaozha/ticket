@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * @author zhaozha
  * @date 2020/1/10 下午5:52
@@ -13,7 +15,8 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class DeleteManagerDTO {
+public class DeleteManagerDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Long id;
     private Long managerId;
 }
