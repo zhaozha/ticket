@@ -4,11 +4,14 @@ import javax.persistence.*;
 
 import lombok.*;
 
+import java.io.Serializable;
+
 @Data
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblManager {
+public class TblManager implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * 管理员编号
      */

@@ -9,6 +9,9 @@
     <result column="name" jdbcType="VARCHAR" property="name" />
     <result column="product_id" jdbcType="BIGINT" property="productId" />
     <result column="park_id" jdbcType="BIGINT" property="parkId" />
-    <result column="price" jdbcType="DECIMAL" property="price" />
+    <result column="price" jdbcType="INTEGER" property="price" />
+    <result column="returnable_amount" jdbcType="INTEGER" property="returnableAmount" />
+    <result column="proportion" jdbcType="INTEGER" property="proportion" />
+    <result column="url" jdbcType="VARCHAR" property="url" />
   </resultMap>
 </mapper>

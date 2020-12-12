@@ -4,6 +4,10 @@ import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.qy.ticket.common.FeeDeserialize;
+import com.qy.ticket.common.FeeSerialize;
 import lombok.*;
 
 @Data
@@ -27,12 +31,16 @@ public class TblBillChild implements Serializable {
     /**
      * 子账单充值金额(分)
      */
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
     private Integer amount;
 
     /**
      * 子账单退款金额(分)
      */
     @Column(name = "refund_amount")
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
     private Integer refundAmount;
 
     /**
@@ -82,6 +90,8 @@ public class TblBillChild implements Serializable {
      * 票单价(分)
      */
     @Column(name = "ticket_price")
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
     private Integer ticketPrice;
 
     /**
@@ -100,5 +110,7 @@ public class TblBillChild implements Serializable {
      * 父账单金额(分)
      */
     @Column(name = "father_amount")
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
     private Integer fatherAmount;
 }

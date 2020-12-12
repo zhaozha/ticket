@@ -2,14 +2,13 @@ package com.qy.ticket.entity;
 
 import java.util.Date;
 import javax.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
-@Getter
-@Setter
-@ToString
-@Table(name = "v_check")
+import lombok.*;
+
+@Data
+@Builder
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class VCheck {
     private Long id;
 

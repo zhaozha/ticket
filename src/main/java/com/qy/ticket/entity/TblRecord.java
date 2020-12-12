@@ -1,16 +1,21 @@
 package com.qy.ticket.entity;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.qy.ticket.common.FeeDeserialize;
+import com.qy.ticket.common.FeeSerialize;
 import lombok.*;
 
 @Data
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblRecord {
+public class TblRecord implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * 行程编号
      */
@@ -35,20 +40,26 @@ public class TblRecord {
     private String phoneNum;
 
     /**
-     * 当日消费
+     * 当日消费(分)
      */
-    private BigDecimal income;
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer income;
 
     /**
-     * 当日充值
+     * 当日充值(分)
      */
-    private BigDecimal amount;
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer amount;
 
     /**
-     * 当日退款
+     * 当日退款(分)
      */
     @Column(name = "refund_amount")
-    private BigDecimal refundAmount;
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer refundAmount;
 
     /**
      * 可核销票
@@ -80,24 +91,65 @@ public class TblRecord {
     @Column(name = "version_id")
     private Integer versionId;
 
-    private Long parkId;
-
-    private String parkName;
-
-    private Long productId;
-
-    private String productName;
-
+    /**
+     * 票名称
+     */
+    @Column(name = "ticket_name")
     private String ticketName;
 
-    private BigDecimal ticketPrice;
+    /**
+     * 景区编号
+     */
+    @Column(name = "park_id")
+    private Long parkId;
 
-    private BigDecimal returnableAmount;
+    /**
+     * 景区名称
+     */
+    @Column(name = "park_name")
+    private String parkName;
 
+    /**
+     * 产品编号
+     */
+    @Column(name = "product_id")
+    private Long productId;
+
+    /**
+     * 产品名称
+     */
+    @Column(name = "product_name")
+    private String productName;
+
+    /**
+     * 票价(分)
+     */
+    @Column(name = "ticket_price")
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer ticketPrice;
+
+    /**
+     * 可退金额(分)
+     */
+    @Column(name = "returnable_amount")
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer returnableAmount;
+
+    /**
+     * 有效票数
+     */
+    @Column(name = "effective_num")
     private Integer effectiveNum;
 
+    /**
+     * 理由
+     */
     private String reason;
 
+    /**
+     * 步长
+     */
     private String seq;
-
 }

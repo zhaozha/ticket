@@ -33,11 +33,11 @@
                              targetProject="src/main/java"
                              type="XMLMAPPER"/>
         
-        <table tableName="tbl_bill"/>
-        <table tableName="tbl_bill_child"/>
-        <table tableName="tbl_bill_refund"/>
-        <table tableName="tbl_bill_record"/>
-        <table tableName="tbl_bill_ticket"/>
+<!--        <table tableName="tbl_bill"/>-->
+<!--        <table tableName="tbl_bill_child"/>-->
+<!--        <table tableName="tbl_bill_refund"/>-->
+        <table tableName="tbl_record"/>
+        <table tableName="tbl_ticket"/>
 
     </context>
 </generatorConfiguration>

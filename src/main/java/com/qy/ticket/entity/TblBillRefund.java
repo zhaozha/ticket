@@ -4,6 +4,10 @@ import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.qy.ticket.common.FeeDeserialize;
+import com.qy.ticket.common.FeeSerialize;
 import lombok.*;
 
 @Data
@@ -21,6 +25,8 @@ public class TblBillRefund implements Serializable {
     /**
      * 退款金额
      */
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
     private Integer amount;
 
     /**

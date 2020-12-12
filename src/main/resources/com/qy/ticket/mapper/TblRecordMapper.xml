@@ -9,11 +9,23 @@
     <result column="ticket_id" jdbcType="BIGINT" property="ticketId" />
     <result column="time" jdbcType="TIMESTAMP" property="time" />
     <result column="phone_num" jdbcType="VARCHAR" property="phoneNum" />
-    <result column="income" jdbcType="DECIMAL" property="income" />
-    <result column="amount" jdbcType="DECIMAL" property="amount" />
-    <result column="refund_amount" jdbcType="DECIMAL" property="refundAmount" />
+    <result column="income" jdbcType="INTEGER" property="income" />
+    <result column="amount" jdbcType="INTEGER" property="amount" />
+    <result column="refund_amount" jdbcType="INTEGER" property="refundAmount" />
     <result column="available_num" jdbcType="INTEGER" property="availableNum" />
     <result column="used_num" jdbcType="INTEGER" property="usedNum" />
     <result column="total_num" jdbcType="INTEGER" property="totalNum" />
+    <result column="user_id" jdbcType="BIGINT" property="userId" />
+    <result column="version_id" jdbcType="INTEGER" property="versionId" />
+    <result column="ticket_name" jdbcType="VARCHAR" property="ticketName" />
+    <result column="park_id" jdbcType="BIGINT" property="parkId" />
+    <result column="park_name" jdbcType="VARCHAR" property="parkName" />
+    <result column="product_id" jdbcType="BIGINT" property="productId" />
+    <result column="product_name" jdbcType="VARCHAR" property="productName" />
+    <result column="ticket_price" jdbcType="INTEGER" property="ticketPrice" />
+    <result column="returnable_amount" jdbcType="INTEGER" property="returnableAmount" />
+    <result column="effective_num" jdbcType="INTEGER" property="effectiveNum" />
+    <result column="reason" jdbcType="VARCHAR" property="reason" />
+    <result column="seq" jdbcType="VARCHAR" property="seq" />
   </resultMap>
 </mapper>
