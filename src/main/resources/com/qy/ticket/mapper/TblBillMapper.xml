@@ -7,13 +7,13 @@
     -->
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="phone_num" jdbcType="VARCHAR" property="phoneNum" />
-    <result column="amount" jdbcType="DECIMAL" property="amount" />
-    <result column="refund_amount" jdbcType="DECIMAL" property="refundAmount" />
+    <result column="amount" jdbcType="INTEGER" property="amount" />
+    <result column="refund_amount" jdbcType="INTEGER" property="refundAmount" />
     <result column="time" jdbcType="TIMESTAMP" property="time" />
-    <result column="price" jdbcType="DECIMAL" property="price" />
     <result column="open_id" jdbcType="VARCHAR" property="openId" />
     <result column="status" jdbcType="INTEGER" property="status" />
-    <result column="ticket_id" jdbcType="BIGINT" property="ticketId" />
-    <result column="record_id" jdbcType="BIGINT" property="recordId" />
+    <result column="user_id" jdbcType="BIGINT" property="userId" />
+    <result column="park_id" jdbcType="BIGINT" property="parkId" />
+    <result column="product_id" jdbcType="BIGINT" property="productId" />
   </resultMap>
 </mapper>

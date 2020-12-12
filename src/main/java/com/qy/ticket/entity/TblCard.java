@@ -4,11 +4,14 @@ import javax.persistence.*;
 
 import lombok.*;
 
+import java.io.Serializable;
+
 @Data
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblCard {
+public class TblCard implements Serializable {
+    private static final long serialVersionUID = 1L;
     @Id
     private Integer id;
 

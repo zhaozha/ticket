@@ -3,7 +3,6 @@ package com.qy.ticket.entity;
 import javax.persistence.*;
 
 import lombok.*;
-import org.hibernate.validator.constraints.NotBlank;
 
 import java.io.Serializable;
 

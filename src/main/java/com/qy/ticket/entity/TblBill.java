@@ -1,10 +1,8 @@
 package com.qy.ticket.entity;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.*;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 
 import lombok.*;
 
@@ -12,39 +10,59 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblBill {
-  /** 账单编号 */
-  @Id private Long id;
+public class TblBill implements Serializable {
+    private static final long serialVersionUID = 1L;
+    /**
+     * 账单编号
+     */
+    @Id
+    private Long id;
 
-  /** 手机号 */
-  @Column(name = "phone_num")
-  private String phoneNum;
+    /**
+     * 手机号
+     */
+    @Column(name = "phone_num")
+    private String phoneNum;
 
-  /** 充值金额 */
-  private BigDecimal amount;
+    /**
+     * 充值金额(分)
+     */
+    private Integer amount;
 
-  /** 退款金额 */
-  @Column(name = "refund_amount")
-  private BigDecimal refundAmount;
+    /**
+     * 退款金额(分)
+     */
+    @Column(name = "refund_amount")
+    private Integer refundAmount;
 
-  /** 时间 */
-  private Date time;
+    /**
+     * 时间
+     */
+    private Date time;
 
-  @Column(name = "open_id")
-  private String openId;
+    @Column(name = "open_id")
+    private String openId;
 
-  /** 0未支付1支付成功2全额退款 */
-  private Integer status;
+    /**
+     * 0未支付1支付成功2全额退款
+     */
+    private Integer status;
 
-  /** 用户编号 */
-  @Column(name = "user_id")
-  private Long userId;
+    /**
+     * 用户编号
+     */
+    @Column(name = "user_id")
+    private Long userId;
 
-  /** 景区编号 */
-  @Column(name = "park_id")
-  private Long parkId;
+    /**
+     * 景区编号
+     */
+    @Column(name = "park_id")
+    private Long parkId;
 
-  /** 产品编号 */
-  @Column(name = "product_id")
-  private Long productId;
+    /**
+     * 产品编号
+     */
+    @Column(name = "product_id")
+    private Long productId;
 }

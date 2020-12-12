@@ -15,25 +15,29 @@
         </plugin>
 
         <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
-                        connectionURL="jdbc:mysql://rm-bp1axi70ew70h67haoo.mysql.rds.aliyuncs.com:3306/gate?nullCatalogMeansCurrent=true"
+                        connectionURL="jdbc:mysql://rm-bp1306r3i542lt3539o.mysql.rds.aliyuncs.com:3306/gate?nullCatalogMeansCurrent=true"
                         userId="ingcart"
                         password="Ingcart168_">
         </jdbcConnection>
 
         <!--实体-->
-        <javaModelGenerator targetPackage="com.hd.gate.entity"
+        <javaModelGenerator targetPackage="com.qy.ticket.entity"
                             targetProject="src/main/java"/>
 
         <!--mapper.xml-->
-        <sqlMapGenerator targetPackage="com.hd.gate.mapper"
+        <sqlMapGenerator targetPackage="com.qy.ticket.mapper"
                          targetProject="src/main/resources"/>
 
         <!--mapper接口-->
-        <javaClientGenerator targetPackage="com.hd.gate.dao"
+        <javaClientGenerator targetPackage="com.qy.ticket.dao"
                              targetProject="src/main/java"
                              type="XMLMAPPER"/>
         
-        <table tableName="v_check"/>
+        <table tableName="tbl_bill"/>
+        <table tableName="tbl_bill_child"/>
+        <table tableName="tbl_bill_refund"/>
+        <table tableName="tbl_bill_record"/>
+        <table tableName="tbl_bill_ticket"/>
 
     </context>
 </generatorConfiguration>

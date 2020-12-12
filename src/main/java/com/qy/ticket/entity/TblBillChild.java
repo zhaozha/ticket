@@ -1,6 +1,6 @@
 package com.qy.ticket.entity;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.*;
 
@@ -10,7 +10,8 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class TblBillChild {
+public class TblBillChild implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * 子账单编号
      */
@@ -24,15 +25,15 @@ public class TblBillChild {
     private String phoneNum;
 
     /**
-     * 子账单充值金额
+     * 子账单充值金额(分)
      */
-    private BigDecimal amount;
+    private Integer amount;
 
     /**
-     * 子账单退款金额
+     * 子账单退款金额(分)
      */
     @Column(name = "refund_amount")
-    private BigDecimal refundAmount;
+    private Integer refundAmount;
 
     /**
      * 时间
@@ -78,10 +79,10 @@ public class TblBillChild {
     private Integer ticketNum;
 
     /**
-     * 票单价
+     * 票单价(分)
      */
     @Column(name = "ticket_price")
-    private BigDecimal ticketPrice;
+    private Integer ticketPrice;
 
     /**
      * 父账单编号
@@ -96,7 +97,8 @@ public class TblBillChild {
     private Long recordId;
 
     /**
-     * 父亲账单金额
+     * 父账单金额(分)
      */
-    private BigDecimal fatherAmount;
+    @Column(name = "father_amount")
+    private Integer fatherAmount;
 }
