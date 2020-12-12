@@ -1,15 +1,23 @@
 package com.qy.ticket.entity;
 
-import java.math.BigDecimal;
 import javax.persistence.*;
 
-import lombok.*;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.qy.ticket.common.FeeDeserialize;
+import com.qy.ticket.common.FeeSerialize;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
-@Builder
-@AllArgsConstructor
-@RequiredArgsConstructor
-public class VTicket {
+import java.io.Serializable;
+
+@Getter
+@Setter
+@ToString
+@Table(name = "v_ticket")
+public class VTicket implements Serializable {
+    private static final long serialVersionUID = 1L;
     @Column(name = "ticket_id")
     private Long ticketId;
 
@@ -23,18 +31,22 @@ public class VTicket {
     private Long parkId;
 
     @Column(name = "ticket_price")
-    private BigDecimal ticketPrice;
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer ticketPrice;
+
+    @Column(name = "returnable_amount")
+    @JsonSerialize(using = FeeSerialize.class)
+    @JsonDeserialize(using = FeeDeserialize.class)
+    private Integer returnableAmount;
+
+    private Integer proportion;
+
+    private String url;
 
     @Column(name = "park_name")
     private String parkName;
 
     @Column(name = "product_name")
     private String productName;
-
-    private BigDecimal returnableAmount;
-
-    private Integer proportion;
-
-    private String url;
-
 }

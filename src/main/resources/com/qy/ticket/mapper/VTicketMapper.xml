@@ -9,7 +9,10 @@
     <result column="ticket_name" jdbcType="VARCHAR" property="ticketName" />
     <result column="product_id" jdbcType="BIGINT" property="productId" />
     <result column="park_id" jdbcType="BIGINT" property="parkId" />
-    <result column="ticket_price" jdbcType="DECIMAL" property="ticketPrice" />
+    <result column="ticket_price" jdbcType="INTEGER" property="ticketPrice" />
+    <result column="returnable_amount" jdbcType="INTEGER" property="returnableAmount" />
+    <result column="proportion" jdbcType="INTEGER" property="proportion" />
+    <result column="url" jdbcType="VARCHAR" property="url" />
     <result column="park_name" jdbcType="VARCHAR" property="parkName" />
     <result column="product_name" jdbcType="VARCHAR" property="productName" />
   </resultMap>

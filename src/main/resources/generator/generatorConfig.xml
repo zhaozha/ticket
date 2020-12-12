@@ -36,8 +36,8 @@
 <!--        <table tableName="tbl_bill"/>-->
 <!--        <table tableName="tbl_bill_child"/>-->
 <!--        <table tableName="tbl_bill_refund"/>-->
-        <table tableName="tbl_record"/>
-        <table tableName="tbl_ticket"/>
+        <table tableName="v_check"/>
+        <table tableName="v_ticket"/>
 
     </context>
 </generatorConfiguration>

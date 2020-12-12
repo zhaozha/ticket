@@ -1,5 +1,6 @@
 package com.qy.ticket.entity;
 
+import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.*;
 
@@ -9,7 +10,8 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class VCheck {
+public class VCheck implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Long id;
 
     private Date time;
