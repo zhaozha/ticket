@@ -1,9 +1,7 @@
 package com.qy.ticket.service;
 
 import com.qy.ticket.common.CommonResult;
-import com.qy.ticket.dto.manager.AddManagerDTO;
-import com.qy.ticket.dto.manager.DeleteManagerDTO;
-import com.qy.ticket.dto.manager.ManagerLoginDTO;
+import com.qy.ticket.dto.manager.*;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -30,11 +28,15 @@ public interface ManagerService {
 
     void pdfMonth(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
 
-    CommonResult updTicketPrice() throws Exception;
+    CommonResult selTicket(Long parkId, Long productId) throws Exception;
 
-    CommonResult historyRecord(String date, Integer status, Long productId, Long parkId);
+    CommonResult updTicketPrice(TicketPriceDto ticketPriceDto) throws Exception;
 
-    CommonResult wxLogin() throws Exception;
+    CommonResult historyRecord(Integer status, Long productId, Long parkId);
 
-    CommonResult wxRegister() throws Exception;
+    CommonResult cancellation(CancellationDto cancellationDto);
+
+    CommonResult wxLogin(String code) throws Exception;
+
+    CommonResult wxRegister(RegisterDTO registerDTO) throws Exception;
 }

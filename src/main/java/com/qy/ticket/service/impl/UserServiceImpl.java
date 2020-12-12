@@ -62,9 +62,6 @@ public class UserServiceImpl implements UserService {
     @Value("${tx.wx.pay.key}")
     private String WX_PAY_KEY;
 
-    @Value("${tx.wx.msg.templateid}")
-    private String WX_MSG_TEMPLATEID;
-
     @Value("${tx.wx.pay.mch}")
     private String WX_PAY_MCH;
 
@@ -119,6 +116,30 @@ public class UserServiceImpl implements UserService {
         }
 
         TblUser tblUser = tblUsers.get(0);
+        return CommonResult.builder().status(200).msg("查询成功").data(buildLoginRes(tblUser, sessionKey)).build();
+    }
+
+    @Override
+    public CommonResult wxRegister(TblUser tblUser) throws Exception {
+        String phoneNum = tblUser.getPhoneNum();
+        if (StringUtils.isEmpty(phoneNum)) {
+            return CommonResult.builder().status(400).msg("手机号必须填写").data(tblUser).build();
+        }
+        tblUser.setId(idBaseService.genId());
+        tblUserMapper.insert(tblUser);
+        return CommonResult.builder().status(200).msg("注册成功").data(buildLoginRes(tblUser, "")).build();
+    }
+
+    /**
+     * 构建登录或者注册返回结构
+     *
+     * @param tblUser
+     * @param sessionKey
+     * @return
+     */
+    private JSONObject buildLoginRes(TblUser tblUser, String sessionKey) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("openId", tblUser.getOpenId());
         jsonObject.put("phoneNum", tblUser.getPhoneNum());
         jsonObject.put("id", tblUser.getId());
         jsonObject.put("sessionKey", sessionKey);
@@ -132,20 +153,9 @@ public class UserServiceImpl implements UserService {
         String token = jwtOperator.generateToken(map);
         bucket.set(token, expirationTimeInSecond, TimeUnit.SECONDS);
         jsonObject.put("token", token);
-
-        return CommonResult.builder().status(200).msg("查询成功").data(jsonObject).build();
+        return jsonObject;
     }
 
-    @Override
-    public CommonResult wxRegister(TblUser tblUser) throws Exception {
-        String phoneNum = tblUser.getPhoneNum();
-        if (StringUtils.isEmpty(phoneNum)) {
-            return CommonResult.builder().status(400).msg("手机号必须填写").data(tblUser).build();
-        }
-        tblUser.setId(idBaseService.genId());
-        tblUserMapper.insert(tblUser);
-        return CommonResult.builder().status(200).msg("注册成功").data(tblUser).build();
-    }
 
     @Override
     @Transactional
@@ -153,16 +163,16 @@ public class UserServiceImpl implements UserService {
         Long billId = idBaseService.genId();
         // 统一下单
         WxUnifiedorderDTO wxUnifiedorderDTO = WxUnifiedorderDTO.builder()
-                        .appid(WX_APP_ID)
-                        .mch_id(WX_PAY_MCH)
-                        .openid(tblBillDTO.getOpenId())
-                        .body("景区票务")
-                        .nonce_str(WXPayUtil.generateNonceStr())
-                        .notify_url(WX_PAY_URL)
-                        .out_trade_no(String.valueOf(billId))
-                        .total_fee(tblBillDTO.getAmount().intValue() * 100)
-                        .trade_type("JSAPI")
-                        .build();
+                .appid(WX_APP_ID)
+                .mch_id(WX_PAY_MCH)
+                .openid(tblBillDTO.getOpenId())
+                .body("景区票务")
+                .nonce_str(WXPayUtil.generateNonceStr())
+                .notify_url(WX_PAY_URL)
+                .out_trade_no(String.valueOf(billId))
+                .total_fee(tblBillDTO.getAmount().intValue() * 100)
+                .trade_type("JSAPI")
+                .build();
         String retStr = restTemplate.postForObject(DOMAIN_API + UNIFIEDORDER_URL_SUFFIX, WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxUnifiedorderDTO), WX_PAY_KEY), String.class);
         WxUnifiedorderResultDTO wxUnifiedorderResultDTO = (WxUnifiedorderResultDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(retStr), WxUnifiedorderResultDTO.class);
         // 业务逻辑

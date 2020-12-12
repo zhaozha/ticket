@@ -6,32 +6,34 @@ import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.qy.ticket.common.CommonResult;
-import com.qy.ticket.dao.TblManagerMapper;
-import com.qy.ticket.dao.TblRecordCustomizedMapper;
-import com.qy.ticket.dao.TblRecordMapper;
-import com.qy.ticket.dao.VTicketMapper;
+import com.qy.ticket.constant.RedisConstant;
+import com.qy.ticket.dao.*;
 import com.qy.ticket.dto.manager.*;
-import com.qy.ticket.entity.TblManager;
-import com.qy.ticket.entity.TblRecord;
-import com.qy.ticket.entity.VTicket;
+import com.qy.ticket.entity.*;
 import com.qy.ticket.service.ManagerService;
-import com.qy.ticket.util.DayPDFUtils;
-import com.qy.ticket.util.MonthPDFUtils;
-import com.qy.ticket.util.NumberUtil;
+import com.qy.ticket.util.*;
 import com.virgo.virgoidgenerator.intf.IdBaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.qy.ticket.constant.SystemConstant.*;
+import static com.qy.ticket.constant.SystemConstant.CONTEXT_KEY_USER_OPEN_ID;
 
 /**
  * @author zhaozha
@@ -45,8 +47,16 @@ public class ManagerServiceImpl implements ManagerService {
     private final TblRecordMapper tblRecordMapper;
     private final TblRecordCustomizedMapper tblRecordCustomizedMapper;
     private final VTicketMapper vTicketMapper;
+    private final TblTicketMapper tblTicketMapper;
+    private final TblCheckCustomizedMapper tblCheckCustomizedMapper;
 
     private final IdBaseService idBaseService;
+    private final RestTemplate restTemplate;
+    private final RedissonClient redissonSingle;
+    private final JwtUtil jwtOperator;
+
+    @Value("${jwt.expire-time-in-second}")
+    private Long expirationTimeInSecond;
 
     @Override
     public CommonResult login(ManagerLoginDTO managerLoginDTO) {
@@ -302,22 +312,151 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     @Override
-    public CommonResult updTicketPrice() throws Exception {
-        return null;
+    public CommonResult selTicket(Long parkId, Long productId) throws Exception {
+        List<TblTicket> tblTickets = MapperUtil.getListByKVs(TblTicket.class, tblTicketMapper, "parkId", parkId, "productId", productId);
+        return new CommonResult(200, "查询成功", tblTickets);
     }
 
     @Override
-    public CommonResult historyRecord(String date, Integer status, Long productId, Long parkId) {
-        return null;
+    public CommonResult updTicketPrice(TicketPriceDto ticketPriceDto) throws Exception {
+        TblTicket tblTicket = new TblTicket();
+        BeanUtils.copyProperties(ticketPriceDto, tblTicket);
+        tblTicketMapper.updateByPrimaryKey(tblTicket);
+        return new CommonResult(200, "变更成功", null);
     }
 
     @Override
-    public CommonResult wxLogin() throws Exception {
-        return null;
+    public CommonResult historyRecord(Integer status, Long productId, Long parkId) {
+        Example example = new Example(TblRecord.class, true, true);
+        Example.Criteria criteria = example.createCriteria();
+        if (0 == status) {
+            criteria.andGreaterThan("availableNum", 0);
+        } else {
+            criteria.andEqualTo("availableNum", 0);
+        }
+        if (-1L != productId) {
+            criteria.andEqualTo("productId", productId);
+        }
+        if (-1L != parkId) {
+            criteria.andEqualTo("parkId", parkId);
+        }
+        criteria.andLike("time", DateUtil.yyyyMMdd.format(new Date()) + "%");
+        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+        return new CommonResult(200, "变更成功", tblRecords);
     }
 
     @Override
-    public CommonResult wxRegister() throws Exception {
-        return null;
+    public CommonResult cancellation(CancellationDto cancellationDto) {
+        tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
+        dealCheckLog(cancellationDto);
+        return new CommonResult(200, "核销成功", null);
+    }
+
+    /**
+     * 核销记录
+     *
+     * @param
+     */
+    private void dealCheckLog(CancellationDto cancellationDto) {
+        Example example = new Example(TblRecord.class, true, true);
+        example.createCriteria().andIn("id", cancellationDto.getIds());
+        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+        List<TblCheck> list = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(tblRecords)) {
+            for (TblRecord tblRecord : tblRecords) {
+                TblCheck tblCheck = new TblCheck();
+                BeanUtils.copyProperties(tblRecord, tblCheck);
+                tblCheck.setRecordId(tblRecord.getId());
+                tblCheck.setTime(new Date());
+                tblCheck.setTicketNum(tblRecord.getEffectiveNum());
+                tblCheck.setId(idBaseService.genId());
+                tblCheck.setCardNo("1");
+                list.add(tblCheck);
+            }
+        }
+        tblCheckCustomizedMapper.insertList(list);
+    }
+
+    @Override
+    public CommonResult wxLogin(String code) throws Exception {
+        String url =
+                "https://api.weixin.qq.com/sns/jscode2session?appid="
+                        + "wx84bf27b5876fb8ec"
+                        + "&secret="
+                        + "WX_APP_SECRET"
+                        + "&js_code="
+                        + code
+                        + "&grant_type=authorization_code";
+
+        String result = restTemplate.getForObject(url, String.class);
+        String openId = JSONObject.parseObject(result).getString("openid");
+        String sessionKey = JSONObject.parseObject(result).getString("session_key");
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("openId", openId);
+
+        Example example = new Example(TblManager.class, true, true);
+        example.createCriteria().andEqualTo("openId", openId);
+        List<TblManager> tblManagers = tblManagerMapper.selectByExample(example);
+        if (CollectionUtils.isEmpty(tblManagers)) {
+            jsonObject.put("phoneNum", "");
+            jsonObject.put("id", "");
+            jsonObject.put("sessionKey", sessionKey);
+            return CommonResult.builder().status(400).msg("未注册").data(jsonObject).build();
+        }
+
+        TblManager tblManager = tblManagers.get(0);
+        return CommonResult.builder().status(200).msg("查询成功").data(buildLoginRes(tblManager, sessionKey)).build();
+    }
+
+    @Override
+    public CommonResult wxRegister(RegisterDTO registerDTO) throws Exception {
+        String phoneNum = registerDTO.getPhoneNum();
+        if (StringUtils.isEmpty(phoneNum)) {
+            return CommonResult.builder().status(400).msg("手机号必须填写").data(null).build();
+        }
+        List<TblManager> tblManagers = MapperUtil.getListByKVs(TblManager.class, tblManagerMapper, "phoneNum", phoneNum);
+        if (CollectionUtils.isEmpty(tblManagers)) {
+            return CommonResult.builder().status(400).msg("管理员不存在").data(null).build();
+        }
+        return CommonResult.builder().status(200).msg("注册成功").data(buildLoginRes(tblManagers.get(0), "")).build();
+    }
+
+
+    /**
+     * 构建登录或者注册返回结构
+     *
+     * @param tblManager
+     * @param sessionKey
+     * @return
+     */
+    private JSONObject buildLoginRes(TblManager tblManager, String sessionKey) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("openId", tblManager.getOpenId());
+        jsonObject.put("phoneNum", tblManager.getPhoneNum());
+        jsonObject.put("id", tblManager.getId());
+        jsonObject.put("sessionKey", sessionKey);
+        // token
+        RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_USER_TOKEN, tblManager.getId().toString()));
+        Map<String, Object> map = new HashMap<>();
+        map.put(CONTEXT_KEY_USER_ID, tblManager.getId());
+        map.put(CONTEXT_KEY_USER_NAME, tblManager.getNickName());
+        map.put(CONTEXT_KEY_USER_PHONE, tblManager.getPhoneNum());
+        map.put(CONTEXT_KEY_USER_OPEN_ID, tblManager.getOpenId());
+        String token = jwtOperator.generateToken(map);
+        bucket.set(token, expirationTimeInSecond, TimeUnit.SECONDS);
+        jsonObject.put("token", token);
+        // 权限
+        List<VTicket> vTickets = vTicketMapper.selectAll();
+        List<LoginPowerDTO> list = CollectionUtils.isEmpty(vTickets) ? new ArrayList<>() : JSONArray.parseArray(JSON.toJSONString(vTickets), LoginPowerDTO.class);
+        if (!CollectionUtils.isEmpty(list)) {
+            // 2级及以下给出范围
+            if (tblManager.getLevel() <= 2) {
+                list = list.stream().filter(s -> s.getParkId().equals(tblManager.getParkId()) && s.getProductId().equals(tblManager.getProductId())).collect(Collectors.toList());
+            }
+        }
+        jsonObject.put("power", list);
+        jsonObject.put("level", tblManager.getLevel());
+        return jsonObject;
     }
 }
