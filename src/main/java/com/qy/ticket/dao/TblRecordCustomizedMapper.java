@@ -31,7 +31,7 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
             "</script>")
     int cancellationAll2Upd(@Param("ids") List<Long> ids);
 
-    @Update("update tbl_record set effective_num = effective_num - #{ticketNum}"
+    @Update("update tbl_record set effective_num = effective_num - #{ticketNum},available_num = available_num - #{ticketNum}"
             + " where id = #{id}")
     int refund2Upd(@Param("id") Long id,@Param("ticketNum") Integer ticketNum);
 

@@ -520,10 +520,12 @@ public class UserServiceImpl implements UserService {
         }
         List<TblRecord> tblRecords = JSONArray.parseArray(JSON.toJSONString(commonResult.getData()), TblRecord.class);
         if (!CollectionUtils.isEmpty(tblRecords)) {
+            for (TblRecord tblRecord: tblRecords) {
+                circleRefund(tblRecord,tblRecord.getAvailableNum()*(tblRecord.getReturnableAmount()/tblRecord.getTotalNum()));
+            }
             List<Long> collect = tblRecords.stream().map(TblRecord::getId).collect(Collectors.toList());
             tblRecordCustomizedMapper.cancellationAll2Upd(collect);
             tblRecords.forEach(this::dealCheckLog);
-            // 退款 todo
         }
         return CommonResult.builder().status(200).msg("核销成功").data(null).build();
     }

@@ -382,7 +382,7 @@ public class ManagerServiceImpl implements ManagerService {
         String url =
                 "https://api.weixin.qq.com/sns/jscode2session?appid="
                         + "wx84bf27b5876fb8ec"
-                        + "&secret="
+                        + "&secret=6131de233bf87acaa6a2d575ea796645"
                         + "WX_APP_SECRET"
                         + "&js_code="
                         + code
