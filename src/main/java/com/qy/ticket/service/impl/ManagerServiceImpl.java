@@ -198,18 +198,20 @@ public class ManagerServiceImpl implements ManagerService {
             PageHelper.startPage(pageNum, pageSize);
         }
         List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
-        JSONObject jsonObject = new JSONObject();
+        SumDataDto sumDataDto = SumDataDto.builder()
+                .data(tblRecords)
+                .amount(sum.getAmount())
+                .refundAmount(sum.getRefundAmount())
+                .effectiveNum(sum.getEffectiveNum())
+                .wxFee(NumberUtil.multiplyHalfUp(sum.getIncome(), 0.006))
+                .income(NumberUtil.multiplyHalfUp(sum.getIncome(), 0.994))
+                .build();
         if (pageFlag) {
             PageInfo<TblRecord> pageInfo = new PageInfo<>(tblRecords);
-            jsonObject.put("count", pageInfo.getTotal());
+            sumDataDto.setCount(pageInfo.getTotal());
         }
-        jsonObject.put("data", tblRecords);
-        jsonObject.put("amount", sum.getAmount());
-        jsonObject.put("refundAmount", sum.getRefundAmount());
-        jsonObject.put("effectiveNum", sum.getEffectiveNum());
-        jsonObject.put("wxFee", NumberUtil.multiplyHalfUp(sum.getIncome(), 0.006));
-        jsonObject.put("income", NumberUtil.multiplyHalfUp(sum.getIncome(), 0.994));
-        return CommonResult.builder().status(200).msg("查询成功").data(jsonObject).build();
+
+        return CommonResult.builder().status(200).msg("查询成功").data(sumDataDto).build();
     }
 
     @Override
@@ -233,8 +235,8 @@ public class ManagerServiceImpl implements ManagerService {
                     .amount(tblRecord.getAmount())
                     .effectiveNum(tblRecord.getEffectiveNum())
                     .refundAmount(tblRecord.getRefundAmount())
-                    .income(NumberUtil.multiplyHalfUp(sum.getIncome(), 0.994))
-                    .wxFee(NumberUtil.multiplyHalfUp(sum.getIncome(), 0.006))
+                    .income(NumberUtil.multiplyHalfUp(tblRecord.getIncome(), 0.994))
+                    .wxFee(NumberUtil.multiplyHalfUp(tblRecord.getIncome(), 0.006))
                     .build();
             if (0 == type) {
                 tblRecordDTO.setTime(new SimpleDateFormat("yyyy-MM-dd").format(tblRecord.getTime()));
@@ -243,18 +245,20 @@ public class ManagerServiceImpl implements ManagerService {
             }
             list.add(tblRecordDTO);
         }
-        JSONObject jsonObject = new JSONObject();
+        SumDataDto sumDataDto = SumDataDto.builder()
+                .data(list)
+                .amount(sum.getAmount())
+                .refundAmount(sum.getRefundAmount())
+                .effectiveNum(sum.getEffectiveNum())
+                .wxFee(NumberUtil.multiplyHalfUp(sum.getIncome(), 0.006))
+                .income(NumberUtil.multiplyHalfUp(sum.getIncome(), 0.994))
+                .build();
         if (pageFlag) {
             PageInfo<TblRecord> pageInfo = new PageInfo<>(tblRecords);
-            jsonObject.put("count", pageInfo.getTotal());
+            sumDataDto.setCount(pageInfo.getTotal());
         }
-        jsonObject.put("data", list);
-        jsonObject.put("amount", sum.getAmount());
-        jsonObject.put("refundAmount", sum.getRefundAmount());
-        jsonObject.put("effectiveNum", sum.getEffectiveNum());
-        jsonObject.put("wxFee", NumberUtil.multiplyHalfUp(sum.getIncome(), 0.006));
-        jsonObject.put("income", NumberUtil.multiplyHalfUp(sum.getIncome(), 0.994));
-        return CommonResult.builder().status(200).msg("查询成功").data(jsonObject).build();
+
+        return CommonResult.builder().status(200).msg("查询成功").data(sumDataDto).build();
     }
 
     @Override
@@ -264,8 +268,9 @@ public class ManagerServiceImpl implements ManagerService {
             startTime = startTime + " 00:00:01";
             endTime = endTime + " 23:59:59";
             CommonResult commonResult = selectBillByDetail(startTime, endTime, 1, 10000, parkId, productId, false);
-            JSONObject data = (JSONObject) commonResult.getData();
-            List<TblRecord> tblRecords = JSONArray.parseArray(data.getJSONArray("data").toJSONString(), TblRecord.class);
+            SumDataDto sumDataDto = JSONObject.parseObject(JSON.toJSONString(commonResult.getData()), SumDataDto.class);
+
+            List<TblRecord> tblRecords = JSONArray.parseArray(JSON.toJSONString(sumDataDto.getData()), TblRecord.class);
             Example example = new Example(VTicket.class, true, true);
             example.createCriteria().andEqualTo("parkId", parkId).andEqualTo("productId", productId);
             List<VTicket> vTickets = vTicketMapper.selectByExample(example);
@@ -275,9 +280,9 @@ public class ManagerServiceImpl implements ManagerService {
 
             DayPDFUtils.export(response, tblRecords, name, time,
                     SumRecordDTO.builder()
-                            .effectiveNum(data.getInteger("effectiveNum"))
-                            .income(data.getInteger("income"))
-                            .wxFee(data.getInteger("wxFee"))
+                            .effectiveNum(sumDataDto.getEffectiveNum())
+                            .income(sumDataDto.getIncome())
+                            .wxFee(sumDataDto.getWxFee())
                             .build());
         } catch (Exception e) {
             e.printStackTrace();
@@ -292,8 +297,9 @@ public class ManagerServiceImpl implements ManagerService {
             endTime = endTime + "-31 23:59:59";
             CommonResult commonResult =
                     selectBillBySum(startTime, endTime, 1, 10000, parkId, productId, 1, false);
-            JSONObject data = (JSONObject) commonResult.getData();
-            List<TblRecordDTO> tblRecordDTOS = JSONArray.parseArray(data.getJSONArray("data").toJSONString(), TblRecordDTO.class);
+            SumDataDto sumDataDto = JSONObject.parseObject(JSON.toJSONString(commonResult.getData()), SumDataDto.class);
+
+            List<TblRecordDTO> tblRecordDTOS = JSONArray.parseArray(JSON.toJSONString(sumDataDto.getData()), TblRecordDTO.class);
 
             Example example = new Example(VTicket.class, true, true);
             example.createCriteria().andEqualTo("parkId", parkId).andEqualTo("productId", productId);
@@ -302,8 +308,8 @@ public class ManagerServiceImpl implements ManagerService {
 
             MonthPDFUtils.export(vTicket.getParkName(), time, response, tblRecordDTOS, vTicket.getProportion(),
                     SumRecordDTO.builder()
-                            .income(data.getInteger("income"))
-                            .wxFee(data.getInteger("wxFee"))
+                            .income(sumDataDto.getIncome())
+                            .wxFee(sumDataDto.getWxFee())
                             .build(),
                     vTicket.getProductName());
         } catch (Exception e) {

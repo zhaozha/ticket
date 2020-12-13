@@ -1,0 +1,20 @@
+spring:
+  # 设置数据库
+  datasource:
+  # url: jdbc:mysql://rm-bp1axi70ew70h67ha.mysql.rds.aliyuncs.com:3306/gate?characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=GMT%2B8
+    url: jdbc:mysql://rm-bp1306r3i542lt353.mysql.rds.aliyuncs.com:3306/gate?characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=GMT%2B8
+    hikari:
+      username: ingcart
+      password: Ingcart168_
+      # >=6.x com.mysql.cj.jdbc.DriverIngcart168_
+      # <=5.x com.mysql.jdbc.Driver
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+# redisson 配置
+redisson:
+  address: redis://r-wz91r86qha12v64mo7.redis.rds.aliyuncs.com:6379
+  password: 210*2462fqy168_c922b2a1ea504b
+  timeout: 3000
+  # 连接池配置
+  connectionPoolSize: 10
+  connectionMinimumIdleSize: 5

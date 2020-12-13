@@ -3,6 +3,7 @@ package com.qy.ticket.config;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,17 +13,27 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class RedissonConfiguration {
+  @Value("${redisson.address}")
+  private String address;
+  @Value("${redisson.password}")
+  private String password;
+  @Value("${redisson.timeout}")
+  private Integer timeout;
+  @Value("${redisson.connectionPoolSize}")
+  private Integer connectionPoolSize;
+  @Value("${redisson.connectionMinimumIdleSize}")
+  private Integer connectionMinimumIdleSize;
+
   @Bean
   RedissonClient redissonSingle() {
     Config config = new Config();
     config
-        .useSingleServer()
-       .setAddress("redis://r-wz91r86qha12v64mo7pd.redis.rds.aliyuncs.com:6379")
-        //    .setAddress("redis://r-wz91r86qha12v64mo7pd.redis.rds.aliyuncs.com:6379")
-        .setPassword("210*2462fqy168_c922b2a1ea504b")
-        .setTimeout(3000)
-        .setConnectionPoolSize(150)
-        .setConnectionMinimumIdleSize(20);
+            .useSingleServer()
+            .setAddress(address)
+            .setPassword(password)
+            .setTimeout(timeout)
+            .setConnectionPoolSize(connectionPoolSize)
+            .setConnectionMinimumIdleSize(connectionMinimumIdleSize);
     return Redisson.create(config);
   }
 }

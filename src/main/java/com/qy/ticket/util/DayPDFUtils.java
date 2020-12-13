@@ -192,7 +192,7 @@ public class DayPDFUtils {
                 table.addCell(cell);
             } else if (i == 5) {
                 PdfPCell cell = new PdfPCell();
-                Paragraph para = new Paragraph(sumRecordDTO.getIncome() + sumRecordDTO.getWxFee() + "", font);
+                Paragraph para = new Paragraph(NumberUtil.divide100(new BigDecimal(sumRecordDTO.getIncome() + sumRecordDTO.getWxFee())), font);
                 cell.setPhrase(para);
                 cell.setBorderWidthRight(2);
                 cell.setBorderWidthTop(2);

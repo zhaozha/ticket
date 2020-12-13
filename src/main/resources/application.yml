@@ -40,3 +40,12 @@ jwt:
   secret: db3b2ac0c4f543edb0c6f2cf4c57861d
   # 有效期，单位秒，默认2周
   expire-time-in-second: 1209600
+
+# redisson 配置
+redisson:
+  address: redis://r-wz91r86qha12v64mo7pd.redis.rds.aliyuncs.com:6379
+  password: 210*2462fqy168_c922b2a1ea504b
+  timeout: 3000
+  # 连接池配置
+  connectionPoolSize: 10
+  connectionMinimumIdleSize: 5

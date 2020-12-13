@@ -61,7 +61,7 @@ public class UserTokenAop {
 
         // token处理
         if (null == authAnnotation) {
-            String wthToken = request.getHeader("WTHToken");
+            String wthToken = request.getHeader("QYToken");
             if (StringUtils.isEmpty(wthToken)) {
                 return new CommonResult(EumException.NOT_LOGIN);
             }
@@ -69,11 +69,6 @@ public class UserTokenAop {
             RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_USER_TOKEN, BaseContext.getUserId().toString()));
             if (null == bucket.get()) {
                 return new CommonResult(EumException.NOT_LOGIN);
-            }
-        } else {
-            String wthToken = request.getHeader("WTHToken");
-            if (!StringUtils.isEmpty(wthToken)) {
-                buildBaseContext(wthToken);
             }
         }
 
