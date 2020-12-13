@@ -23,6 +23,10 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
             + " where id = #{id}")
     int cancellation2Upd(@Param("id") Long id);
 
+    @Update("update tbl_record set reason = '指定金额退款'"
+            + " where id = #{id}")
+    int reason(@Param("id") Long id);
+
     @Update("<script>" +
             "update tbl_record set available_num = available_num + #{availableNum},used_num = total_num"
             + " where  id in " +

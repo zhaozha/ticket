@@ -411,12 +411,13 @@ public class UserServiceImpl implements UserService {
         if (tblRecord.getIncome() < refundAmount) {
             return CommonResult.builder().status(400).msg("退款金额有误").build();
         }
-        // 如果是退押金引发的指定金额退款、不记录原因
         CommonResult commonResult = circleRefund(tblRecord, refundAmount);
         // 核销所有票
         if (commonResult.getStatus() == 200) {
             tblRecordCustomizedMapper.cancellation2Upd(recordId);
         }
+        // 记录退款原因
+        tblRecordCustomizedMapper.reason(recordId);
         return commonResult;
     }
 
