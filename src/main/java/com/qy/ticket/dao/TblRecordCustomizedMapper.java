@@ -28,14 +28,13 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
             + " where id = #{id}")
     int reason(@Param("id") Long id);
 
-//    @Update("<script>" +
-//            "update tbl_record set available_num = 0,used_num = effective_num," +
-//            "income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"
-//            + " where  id in " +
-//            " <foreach collection='ids' item='item' open='(' separator=',' close=')'> " +
-//            " #{item} </foreach>" +
-//            "</script>")
-//    int cancellationAll2Upd(@Param("ids") List<Long> ids, @Param("amount") Integer refundAmount);
+    @Update("<script>" +
+            "update tbl_record set available_num = 0,used_num = effective_num"
+            + " where  id in " +
+            " <foreach collection='ids' item='item' open='(' separator=',' close=')'> " +
+            " #{item} </foreach>" +
+            "</script>")
+    int cancellationAll2Upd(@Param("ids") List<Long> ids);
 
     @Update("update tbl_record set effective_num = effective_num - #{effectiveNum},available_num = available_num - #{availableNum}," +
             "income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"

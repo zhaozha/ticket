@@ -353,8 +353,7 @@ public class ManagerServiceImpl implements ManagerService {
 
     @Override
     public CommonResult cancellation(CancellationDto cancellationDto) {
-        // todo
-        //tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
+        tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
         dealCheckLog(cancellationDto);
         return new CommonResult(200, "核销成功", null);
     }
@@ -424,6 +423,10 @@ public class ManagerServiceImpl implements ManagerService {
         List<TblManager> tblManagers = MapperUtil.getListByKVs(TblManager.class, tblManagerMapper, "phoneNum", phoneNum);
         if (CollectionUtils.isEmpty(tblManagers)) {
             return CommonResult.builder().status(400).msg("管理员不存在").data(null).build();
+        } else {
+            TblManager tblManager = tblManagers.get(0);
+            tblManager.setOpenId(registerDTO.getOpenId());
+            tblManagerMapper.updateByPrimaryKeySelective(tblManager);
         }
         return CommonResult.builder().status(200).msg("注册成功").data(buildLoginRes(tblManagers.get(0), "")).build();
     }

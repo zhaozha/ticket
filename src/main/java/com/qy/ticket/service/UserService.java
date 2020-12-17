@@ -1,10 +1,7 @@
 package com.qy.ticket.service;
 
 import com.qy.ticket.common.CommonResult;
-import com.qy.ticket.dto.user.TblBillDTO;
-import com.qy.ticket.dto.user.TblRefundDTO;
-import com.qy.ticket.dto.user.TblSpecialRefundDTO;
-import com.qy.ticket.dto.user.TblUserDto;
+import com.qy.ticket.dto.user.*;
 import com.qy.ticket.entity.TblRecord;
 
 /**
@@ -127,6 +124,8 @@ public interface UserService {
      * @throws Exception
      */
     CommonResult refund(Long recordId, TblRecord tblRecord) throws Exception;
+
+    CommonResult refundTrain(Long recordId, TblRefundTrainDTO tblRefundTrainDTO) throws Exception;
 
 //    /**
 //     * 核销

@@ -4,7 +4,9 @@ import com.qy.ticket.annotation.IgnoreUserToken;
 import com.qy.ticket.annotation.UserLock;
 import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.manager.*;
+import com.qy.ticket.dto.user.TblRefundTrainDTO;
 import com.qy.ticket.service.impl.ManagerServiceImpl;
+import com.qy.ticket.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 @Slf4j
 public class ManagerController {
     private final ManagerServiceImpl managerService;
+    private final UserServiceImpl userService;
 
     @IgnoreUserToken
     @GetMapping("/manager/openid/code/{code}")
@@ -155,5 +158,11 @@ public class ManagerController {
                          @PathVariable String startTime,
                          @PathVariable String endTime) {
         managerService.pdfMonth(response, startTime, endTime, parkId, productId);
+    }
+
+    @UserLock
+    @PostMapping("/manager/wx/refund")
+    public CommonResult refund(@RequestBody TblRefundTrainDTO tblRefundTrainDTO) throws Exception {
+        return userService.refundTrain(tblRefundTrainDTO.getRecordId(), tblRefundTrainDTO);
     }
 }

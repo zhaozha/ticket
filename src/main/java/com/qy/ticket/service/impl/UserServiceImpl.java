@@ -597,6 +597,26 @@ public class UserServiceImpl implements UserService {
         return commonResult;
     }
 
+    @RecordLock
+    @Override
+    @Transactional
+    public CommonResult refundTrain(Long recordId, TblRefundTrainDTO tblRefundTrainDT) throws Exception {
+        // 票数合规检测
+        TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
+
+        // 退款金额计算
+        Integer ticketPrice = tblRecord.getTicketPrice();
+        Integer effectiveNum = tblRecord.getEffectiveNum();
+        Integer totalRefundAmount = ticketPrice * effectiveNum;
+
+        CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
+        // 退款成功,变更有效票数、可核销票数、退款金额、订单收入
+        if (commonResult.getStatus() == 200) {
+            tblRecordCustomizedMapper.refund2Upd(recordId, 0, effectiveNum, totalRefundAmount);
+        }
+        return commonResult;
+    }
+
     /**
      * 核销记录
      *
