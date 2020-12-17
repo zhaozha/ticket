@@ -402,6 +402,14 @@ public class UserServiceImpl implements UserService {
         return CommonResult.builder().status(200).msg("查询成功").data(tblBills).build();
     }
 
+    /**
+     * 尚未核销的票根据票价全额退款
+     *
+     * @param recordId
+     * @param tblRefundDTO 退款
+     * @return
+     * @throws Exception
+     */
     @RecordLock
     @Override
     @Transactional
@@ -422,13 +430,21 @@ public class UserServiceImpl implements UserService {
         }
 
         CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
-        // 退款成功修改有效票数
+        // 退款成功,变更可核销票数、有效票数、退款金额、订单收入
         if (commonResult.getStatus() == 200) {
             tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, totalRefundAmount);
         }
         return commonResult;
     }
 
+    /**
+     * 指定金额退款同时核销全部的可核销票
+     *
+     * @param recordId
+     * @param tblSpecialRefundDTO 指定金额退款
+     * @return
+     * @throws Exception
+     */
     @RecordLock
     @Override
     @Transactional
@@ -442,7 +458,7 @@ public class UserServiceImpl implements UserService {
             return new CommonResult(ORDER_REFUND_NUM_ERROR);
         }
         CommonResult commonResult = circleRefund(tblRecord, refundAmount);
-        // 核销所有可核销票（有效票数不变）
+        // 核销所有可核销票
         if (commonResult.getStatus() == 200) {
             tblRecordCustomizedMapper.cancellation2Upd(recordId, refundAmount);
         }

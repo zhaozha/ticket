@@ -14,12 +14,13 @@ import java.util.List;
  * @date 2020/12/12 下午5:11
  **/
 public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
-    @Update("update tbl_record set amount = amount + #{amount},income = income + #{amount},returnable_amount = returnable_amount + #{returnableAmount} "
+    @Update("update tbl_record set amount = amount + #{amount},income = income + #{amount}"
             + " ,effective_num = effective_num + #{ticketNum},available_num = available_num + #{ticketNum},total_num = total_num + {ticketNum}"
             + " where id = #{id}")
     int charge2Upd(@Param("id") Long id, @Param("amount") Integer amount, @Param("returnableAmount") Integer returnableAmount, @Param("ticketNum") Integer ticketNum);
 
-    @Update("update tbl_record set available_num = 0,used_num = effective_num,income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"
+    @Update("update tbl_record set available_num = 0,used_num = effective_num," +
+            "income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"
             + " where id = #{id}")
     int cancellation2Upd(@Param("id") Long id, @Param("amount") Integer refundAmount);
 
