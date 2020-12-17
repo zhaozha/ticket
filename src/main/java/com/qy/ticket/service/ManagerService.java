@@ -4,6 +4,7 @@ import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.manager.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * @author zhaozha
@@ -30,7 +31,7 @@ public interface ManagerService {
 
     CommonResult selTicket(Long parkId, Long productId) throws Exception;
 
-    CommonResult updTicketPrice(TicketPriceDto ticketPriceDto) throws Exception;
+    CommonResult updTicketPrice(List<TicketPriceDto> ticketPriceDtos) throws Exception;
 
     CommonResult historyRecord(Integer status, Long productId, Long parkId);
 

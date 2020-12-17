@@ -324,10 +324,17 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     @Override
-    public CommonResult updTicketPrice(TicketPriceDto ticketPriceDto) throws Exception {
-        TblTicket tblTicket = new TblTicket();
-        BeanUtils.copyProperties(ticketPriceDto, tblTicket);
-        tblTicketMapper.updateByPrimaryKey(tblTicket);
+    public CommonResult updTicketPrice(List<TicketPriceDto> ticketPriceDtos) throws Exception {
+        if (!CollectionUtils.isEmpty(ticketPriceDtos)) {
+            for (TicketPriceDto ticketPriceDto : ticketPriceDtos) {
+                if (null == ticketPriceDto.getPrice()) {
+                    continue;
+                }
+                TblTicket tblTicket = new TblTicket();
+                BeanUtils.copyProperties(ticketPriceDto, tblTicket);
+                tblTicketMapper.updateByPrimaryKeySelective(tblTicket);
+            }
+        }
         return new CommonResult(200, "变更成功", null);
     }
 

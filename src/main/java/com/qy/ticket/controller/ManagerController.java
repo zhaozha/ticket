@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * @author zhaozha
@@ -45,8 +46,8 @@ public class ManagerController {
 
     @UserLock
     @PostMapping("/manager/ticket/price")
-    public CommonResult updTicketPrice(@RequestBody TicketPriceDto ticketPriceDto) throws Exception {
-        return managerService.updTicketPrice(ticketPriceDto);
+    public CommonResult updTicketPrice(@RequestBody List<TicketPriceDto> ticketPriceDtos) throws Exception {
+        return managerService.updTicketPrice(ticketPriceDtos);
     }
 
     @IgnoreUserToken
