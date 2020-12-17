@@ -7,10 +7,7 @@ import com.qy.ticket.annotation.RecordLock;
 import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.constant.RedisConstant;
 import com.qy.ticket.dao.*;
-import com.qy.ticket.dto.user.TblBillDTO;
-import com.qy.ticket.dto.user.TblRefundDTO;
-import com.qy.ticket.dto.user.TblSpecialRefundDTO;
-import com.qy.ticket.dto.user.TblTicketDTO;
+import com.qy.ticket.dto.user.*;
 import com.qy.ticket.dto.wx.*;
 import com.qy.ticket.entity.*;
 import com.qy.ticket.service.UserService;
@@ -27,7 +24,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import tk.mybatis.mapper.entity.Example;
 
@@ -105,9 +101,8 @@ public class UserServiceImpl implements UserService {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("openId", openId);
 
-        Example example = new Example(TblUser.class, true, true);
-        example.createCriteria().andEqualTo("openId", openId);
-        List<TblUser> tblUsers = tblUserMapper.selectByExample(example);
+        List<TblUser> tblUsers = MapperUtil.getListByKVs(TblUser.class, tblUserMapper, "openId", openId);
+
         if (CollectionUtils.isEmpty(tblUsers)) {
             jsonObject.put("phoneNum", "");
             jsonObject.put("id", "");
@@ -120,11 +115,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResult wxRegister(TblUser tblUser) throws Exception {
-        String phoneNum = tblUser.getPhoneNum();
-        if (StringUtils.isEmpty(phoneNum)) {
-            return CommonResult.builder().status(400).msg("手机号必须填写").data(tblUser).build();
-        }
+    public CommonResult wxRegister(TblUserDto tblUserDto) throws Exception {
+        TblUser tblUser = new TblUser();
+        BeanUtils.copyProperties(tblUserDto, tblUser);
         tblUser.setId(idBaseService.genId());
         tblUserMapper.insert(tblUser);
         return CommonResult.builder().status(200).msg("注册成功").data(buildLoginRes(tblUser, "")).build();
@@ -141,8 +134,8 @@ public class UserServiceImpl implements UserService {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("openId", tblUser.getOpenId());
         jsonObject.put("phoneNum", tblUser.getPhoneNum());
-        jsonObject.put("id", tblUser.getId());
         jsonObject.put("sessionKey", sessionKey);
+        jsonObject.put("id", tblUser.getId());
         // token
         RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_USER_TOKEN, tblUser.getId().toString()));
         Map<String, Object> map = new HashMap<>();
@@ -521,8 +514,8 @@ public class UserServiceImpl implements UserService {
         }
         List<TblRecord> tblRecords = JSONArray.parseArray(JSON.toJSONString(commonResult.getData()), TblRecord.class);
         if (!CollectionUtils.isEmpty(tblRecords)) {
-            for (TblRecord tblRecord: tblRecords) {
-                circleRefund(tblRecord,tblRecord.getAvailableNum()*(tblRecord.getReturnableAmount()/tblRecord.getTotalNum()));
+            for (TblRecord tblRecord : tblRecords) {
+                circleRefund(tblRecord, tblRecord.getAvailableNum() * (tblRecord.getReturnableAmount() / tblRecord.getTotalNum()));
             }
             List<Long> collect = tblRecords.stream().map(TblRecord::getId).collect(Collectors.toList());
             tblRecordCustomizedMapper.cancellationAll2Upd(collect);

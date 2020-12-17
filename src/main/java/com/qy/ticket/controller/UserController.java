@@ -6,6 +6,7 @@ import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.user.TblBillDTO;
 import com.qy.ticket.dto.user.TblRefundDTO;
 import com.qy.ticket.dto.user.TblSpecialRefundDTO;
+import com.qy.ticket.dto.user.TblUserDto;
 import com.qy.ticket.entity.TblUser;
 import com.qy.ticket.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +30,8 @@ public class UserController {
 
     @IgnoreUserToken
     @PostMapping("/wx/register")
-    public CommonResult wxRegister(@RequestBody TblUser tblUser) throws Exception {
-        return userService.wxRegister(tblUser);
+    public CommonResult wxRegister(@RequestBody TblUserDto tblUserDto) throws Exception {
+        return userService.wxRegister(tblUserDto);
     }
 
     @UserLock

@@ -4,6 +4,7 @@ import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.user.TblBillDTO;
 import com.qy.ticket.dto.user.TblRefundDTO;
 import com.qy.ticket.dto.user.TblSpecialRefundDTO;
+import com.qy.ticket.dto.user.TblUserDto;
 import com.qy.ticket.entity.TblUser;
 
 /**
@@ -22,10 +23,10 @@ public interface UserService {
     /**
      * 微信注册
      *
-     * @param tblUser 用户
+     * @param tblUserDto 用户
      * @return 统一返回
      */
-    CommonResult wxRegister(TblUser tblUser) throws Exception;
+    CommonResult wxRegister(TblUserDto tblUserDto) throws Exception;
 
     /**
      * 微信支付-统一下单
