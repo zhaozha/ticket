@@ -19,7 +19,11 @@ public enum EumException {
     // 登录异常 21xxx
     WX_LOGIN_CODE_ERROR(21001, "code错误", null),
     // 行程异常 22xxx
-    RECORD_NOT_EXIST(22001, "无记录", null);
+    RECORD_NOT_EXIST(22001, "无记录", null),
+    // 订单异常 23xxx
+    ORDER_INFO_ERROR(22001, "下单入参异常", null),
+    UNIFIEDORDER_ERROR(22002, "统一下单失败,请稍后再试", null),
+    ORDER_ERROR(22003, "订单异常", null);
     private Integer status;
     private String msg;
     private Object data;

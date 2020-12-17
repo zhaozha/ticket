@@ -13,7 +13,6 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -26,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TblBillDTO implements Serializable {
   private static final long serialVersionUID = 1L;
-  @NotNull(message = "手机号不能为空")
+  @NotNull(message = "用户id不能为空")
   private Long userId;
 
   @NotBlank(message = "手机号不能为空")

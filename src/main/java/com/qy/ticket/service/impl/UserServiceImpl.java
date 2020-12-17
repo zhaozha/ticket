@@ -10,6 +10,7 @@ import com.qy.ticket.dao.*;
 import com.qy.ticket.dto.user.*;
 import com.qy.ticket.dto.wx.*;
 import com.qy.ticket.entity.*;
+import com.qy.ticket.exception.BusinessException;
 import com.qy.ticket.service.UserService;
 import com.qy.ticket.util.*;
 import com.virgo.virgoidgenerator.intf.IdBaseService;
@@ -34,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static com.qy.ticket.constant.RedisConstant.KEY_TICKET_SEQ;
 import static com.qy.ticket.constant.SystemConstant.*;
-import static com.qy.ticket.exception.EumException.RECORD_NOT_EXIST;
+import static com.qy.ticket.exception.EumException.*;
 import static com.qy.ticket.util.WXPayConstants.DOMAIN_API;
 import static com.qy.ticket.util.WXPayConstants.REFUND_URL_SUFFIX;
 import static com.qy.ticket.util.WXPayConstants.UNIFIEDORDER_URL_SUFFIX;
@@ -197,13 +198,16 @@ public class UserServiceImpl implements UserService {
                 .nonce_str(WXPayUtil.generateNonceStr())
                 .notify_url(WX_PAY_URL)
                 .out_trade_no(String.valueOf(billId))
-                .total_fee(tblBillDTO.getAmount().intValue() * 100)
+                .total_fee(tblBillDTO.getAmount() * 100)
                 .trade_type("JSAPI")
                 .build();
+        // 微信统一下单接口调用
         String retStr = restTemplate.postForObject(DOMAIN_API + UNIFIEDORDER_URL_SUFFIX, WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxUnifiedorderDTO), WX_PAY_KEY), String.class);
         WxUnifiedorderResultDTO wxUnifiedorderResultDTO = (WxUnifiedorderResultDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(retStr), WxUnifiedorderResultDTO.class);
         // 业务逻辑
-        if (wxUnifiedorderResultDTO.getResult_code().equals("SUCCESS") && wxUnifiedorderResultDTO.getReturn_code().equals("SUCCESS")) {
+        if (wxUnifiedorderResultDTO.getResult_code().equals("SUCCESS")
+                && wxUnifiedorderResultDTO.getReturn_code().equals("SUCCESS")) {
+
             WxPayResultDTO wxPayResultDTO = WxPayResultDTO.builder()
                     .appId(WX_APP_ID)
                     .nonceStr(WXPayUtil.generateNonceStr())
@@ -212,13 +216,19 @@ public class UserServiceImpl implements UserService {
                     .timeStamp(String.valueOf(WXPayUtil.getCurrentTimestampMs()))
                     .build();
             wxPayResultDTO.setPaySign(WXPayUtil.xmlToMap(WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxPayResultDTO), WX_PAY_KEY)).get("sign"));
+
             // 主订单
             List<TblTicketDTO> list = tblBillDTO.getList().stream()
                     .filter(s -> s.getTicketNum() > 0)
                     .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(list)) {
+                return new CommonResult(ORDER_INFO_ERROR);
+            }
+
             TblTicket tblTicket = tblTicketMapper.selectByPrimaryKey(list.get(0).getTicketId());
             TblBill tblBill = new TblBill();
             BeanUtils.copyProperties(tblBillDTO, tblBill);
+
             tblBill.setTime(new Date());
             tblBill.setId(billId);
             tblBill.setParkId(tblTicket.getParkId());
@@ -228,41 +238,49 @@ public class UserServiceImpl implements UserService {
             tblBill.setRefundAmount(0);
             tblBillMapper.insert(tblBill);
 
-            // 详细清单 & 校验
+            // 子订单 & 校验
+            List<TblBillChild> tblBillChildList = new ArrayList<>();
             int amount = tblBill.getAmount();
             for (TblTicketDTO tblTicketDTO : list) {
-                Long ticketId = tblTicketDTO.getTicketId();
                 Integer ticketNum = tblTicketDTO.getTicketNum();
 
-                TblTicket ticket = tblTicketMapper.selectByPrimaryKey(ticketId);
+                // 获取最新的票信息
+                TblTicket ticket = tblTicketMapper.selectByPrimaryKey(tblTicketDTO.getTicketId());
                 Integer price = ticket.getPrice();
                 Integer returnableAmount = ticket.getReturnableAmount();
-                int total = price * tblTicketDTO.getTicketNum();
+                int total = price * ticketNum;
 
                 TblBillChild tblBillChild = new TblBillChild();
                 BeanUtils.copyProperties(tblBill, tblBillChild);
                 BeanUtils.copyProperties(tblTicketDTO, tblBillChild);
+                // 合计充值
                 tblBillChild.setAmount(total);
                 tblBillChild.setTicketPrice(price);
                 tblBillChild.setId(idBaseService.genId());
                 tblBillChild.setBillId(tblBill.getId());
                 tblBillChild.setFatherAmount(tblBill.getAmount());
+                // 合计可退
                 tblBillChild.setReturnableAmount(returnableAmount * ticketNum);
-                tblBillChildMapper.insert(tblBillChild);
-                // 防止价格下单后变更
+                tblBillChildList.add(tblBillChild);
+                // 防止价格下单后票价变更
                 amount -= total;
             }
+            // 票价变更则回滚
             if (amount != 0) {
-                return CommonResult.builder().status(400).msg("支付参数有误").build();
+                throw new BusinessException(ORDER_INFO_ERROR);
+            }
+            if (!CollectionUtils.isEmpty(tblBillChildList)) {
+                tblBillChildCustomizedMapper.insertList(tblBillChildList);
             }
             return CommonResult.builder().status(200).msg("下单成功").data(wxPayResultDTO).build();
         }
-        return CommonResult.builder().status(400).msg("下单失败,请您重试").build();
+        throw new BusinessException(UNIFIEDORDER_ERROR);
     }
 
     @Override
     @Transactional
     public String wxPayConfirm(String xmlStr) throws Exception {
+        log.info("支付成功回调:{}", xmlStr);
         WxPayConformDTO wxPayConform = (WxPayConformDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(xmlStr), WxPayConformDTO.class);
         if (wxPayConform.getResult_code().equals("SUCCESS") && wxPayConform.getReturn_code().equals("SUCCESS")) {
             long billId = Long.parseLong(wxPayConform.getOut_trade_no());
@@ -318,11 +336,16 @@ public class UserServiceImpl implements UserService {
         Long productId = tblBillChild.getProductId();
         Long parkId = tblBillChild.getParkId();
         Integer payAmount = ticketPrice * ticketNum;
+
         // 景区+产品+时间构成票号步长的key
         RAtomicLong rAtomicLong = redissonSingle.getAtomicLong(RedisConstant.concat(KEY_TICKET_SEQ, parkId.toString(), productId.toString(), DateUtil.yyyyMMdd.format(new Date())));
         long seq = rAtomicLong.incrementAndGet();
 
         VTicket vTicket = MapperUtil.getOneByKVs(VTicket.class, vTicketMapper, null, "ticketId", tblBillChild.getTicketId());
+        if (vTicket == null) {
+            throw new BusinessException(ORDER_ERROR);
+        }
+
         TblRecord tblRecord = new TblRecord();
         BeanUtils.copyProperties(vTicket, tblRecord);
 
@@ -358,12 +381,15 @@ public class UserServiceImpl implements UserService {
      * @param tblRecord
      * @param tblBillChild
      */
-    private void secondChargeBusiness(TblRecord tblRecord, TblBillChild tblBillChild) {
+    private void secondChargeBusiness(TblRecord tblRecord, TblBillChild tblBillChild) throws Exception {
         Long id = tblRecord.getId();
         Integer amount = tblBillChild.getAmount();
         Integer returnableAmount = tblBillChild.getReturnableAmount();
         Integer ticketNum = tblBillChild.getTicketNum();
-        tblRecordCustomizedMapper.charge2Upd(id, amount, returnableAmount, ticketNum);
+        int i = tblRecordCustomizedMapper.charge2Upd(id, amount, returnableAmount, ticketNum);
+        if (i == 0) {
+            throw new BusinessException(ORDER_ERROR);
+        }
     }
 
     @RecordLock
