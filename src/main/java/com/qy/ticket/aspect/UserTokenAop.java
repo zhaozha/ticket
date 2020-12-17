@@ -67,7 +67,7 @@ public class UserTokenAop {
             }
             buildBaseContext(wthToken);
             RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_USER_TOKEN, BaseContext.getUserId().toString()));
-            if (null == bucket.get()) {
+            if (!bucket.isExists()) {
                 return new CommonResult(EumException.NOT_LOGIN);
             }
         }
@@ -130,5 +130,6 @@ public class UserTokenAop {
         BaseContext.setUserIp(ipAddr);
         BaseContext.setUserName(name);
         BaseContext.setUserPhoneNum(phoneNum);
+        BaseContext.setUserOpenId(openId);
     }
 }
