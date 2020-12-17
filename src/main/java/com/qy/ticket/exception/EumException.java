@@ -23,7 +23,11 @@ public enum EumException {
     // 订单异常 23xxx
     ORDER_INFO_ERROR(22001, "下单入参异常", null),
     UNIFIEDORDER_ERROR(22002, "统一下单失败,请稍后再试", null),
-    ORDER_ERROR(22003, "订单异常", null);
+    ORDER_ERROR(22003, "订单异常", null),
+    ORDER_REFUND_NUM_ERROR(22004, "超过可退票数", null),
+    ORDER_REFUND_AMOUNT_ERROR(22005, "退款金额有误", null),
+    PART_REFUND_ERROR(22006, "部分退款成功,请联系管理员处理", null),
+    REFUND_ERROR(22007, "退款异常", null);
     private Integer status;
     private String msg;
     private Object data;

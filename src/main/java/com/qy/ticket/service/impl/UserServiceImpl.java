@@ -259,8 +259,8 @@ public class UserServiceImpl implements UserService {
                 tblBillChild.setId(idBaseService.genId());
                 tblBillChild.setBillId(tblBill.getId());
                 tblBillChild.setFatherAmount(tblBill.getAmount());
-                // 合计可退
-                tblBillChild.setReturnableAmount(returnableAmount * ticketNum);
+                // 单位可退
+                tblBillChild.setReturnableAmount(returnableAmount);
                 tblBillChildList.add(tblBillChild);
                 // 防止价格下单后票价变更
                 amount -= total;
@@ -365,7 +365,6 @@ public class UserServiceImpl implements UserService {
         tblRecord.setVersionId(1);
 
         tblRecord.setTicketPrice(ticketPrice);
-        // 行程累计可退
         tblRecord.setReturnableAmount(returnableAmount);
         tblRecord.setEffectiveNum(ticketNum);
 
@@ -392,6 +391,17 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public CommonResult selectBills(String phoneNum) {
+        Example example = new Example(TblBill.class, true, true);
+        example.createCriteria()
+                .andEqualTo("phoneNum", phoneNum)
+                .andEqualTo("status", 1)
+                .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
+        List<TblBill> tblBills = tblBillMapper.selectByExample(example);
+        return CommonResult.builder().status(200).msg("查询成功").data(tblBills).build();
+    }
+
     @RecordLock
     @Override
     @Transactional
@@ -400,7 +410,7 @@ public class UserServiceImpl implements UserService {
         Integer ticketNum = tblRefundDTO.getTicketNum();
         TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
         if (tblRecord.getAvailableNum() < ticketNum) {
-            return CommonResult.builder().status(400).msg("超过可退票数").build();
+            return new CommonResult(ORDER_REFUND_NUM_ERROR);
         }
         // 退款金额计算
         Integer ticketPrice = tblRecord.getTicketPrice();
@@ -408,13 +418,13 @@ public class UserServiceImpl implements UserService {
         Integer totalRefundAmount = ticketPrice * ticketNum;
 
         if (income - totalRefundAmount < 0) {
-            return CommonResult.builder().status(400).msg("退款金额有误").build();
+            return new CommonResult(ORDER_REFUND_AMOUNT_ERROR);
         }
 
         CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
         // 退款成功修改有效票数
         if (commonResult.getStatus() == 200) {
-            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum);
+            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, totalRefundAmount);
         }
         return commonResult;
     }
@@ -426,15 +436,15 @@ public class UserServiceImpl implements UserService {
         int refundAmount = tblSpecialRefundDTO.getRefundAmount();
         TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
         if (null == tblRecord) {
-            return CommonResult.builder().status(400).msg("票信息有误").build();
+            return new CommonResult(RECORD_NOT_EXIST);
         }
         if (tblRecord.getIncome() < refundAmount) {
-            return CommonResult.builder().status(400).msg("退款金额有误").build();
+            return new CommonResult(ORDER_REFUND_NUM_ERROR);
         }
         CommonResult commonResult = circleRefund(tblRecord, refundAmount);
-        // 核销所有票
+        // 核销所有可核销票（有效票数不变）
         if (commonResult.getStatus() == 200) {
-            tblRecordCustomizedMapper.cancellation2Upd(recordId);
+            tblRecordCustomizedMapper.cancellation2Upd(recordId, refundAmount);
         }
         // 记录退款原因
         tblRecordCustomizedMapper.reason(recordId);
@@ -452,24 +462,28 @@ public class UserServiceImpl implements UserService {
     private CommonResult circleRefund(TblRecord tblRecord, Integer totalRefundAmount) throws Exception {
         List<TblBillChild> tblBillChildren = MapperUtil.getListByKVs(TblBillChild.class, tblBillChildMapper, "recordId", tblRecord.getId(), "status", 1);
         if (!CollectionUtils.isEmpty(tblBillChildren)) {
+            // 根据订单分组
             Map<Long, List<TblBillChild>> map = tblBillChildren.stream().collect(Collectors.groupingBy(TblBillChild::getBillId));
             if (!CollectionUtils.isEmpty(map)) {
+
                 for (Long billId : map.keySet()) {
                     List<TblBillChild> childList = map.get(billId);
                     int totalRefund = 0;
+
                     for (TblBillChild tblBillChild : childList) {
+                        // 计算得出该子订单还能退的金额
                         int billCanRefund = tblBillChild.getAmount() - tblBillChild.getRefundAmount();
                         if (billCanRefund <= 0) {
                             continue;
                         }
                         // 得到本单退款金额
                         int billRealRefund;
-                        if (billCanRefund <= totalRefundAmount) {
-                            totalRefundAmount -= billCanRefund;
+                        if (billCanRefund < totalRefundAmount) {
                             billRealRefund = billCanRefund;
+                            totalRefundAmount -= billCanRefund;
                         } else {
-                            totalRefundAmount = 0;
                             billRealRefund = totalRefundAmount;
+                            totalRefundAmount = 0;
                         }
                         totalRefund += billRealRefund;
                         // 账单变更
@@ -483,7 +497,8 @@ public class UserServiceImpl implements UserService {
         if (totalRefundAmount == 0) {
             return CommonResult.builder().status(200).msg("退款成功").build();
         } else {
-            return CommonResult.builder().status(400).msg("部分退款成功,请联系管理员处理").build();
+            log.error("部分退款成功,需要人工补偿...");
+            return new CommonResult(PART_REFUND_ERROR);
         }
     }
 
@@ -508,11 +523,12 @@ public class UserServiceImpl implements UserService {
         wxPayRefundDTO.setRefund_fee(totalRefund);
 
         WxPayRefundResultDTO wxPayRefundResultDTO = (WxPayRefundResultDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(wxRefundRestTemplate.postForObject(DOMAIN_API + REFUND_URL_SUFFIX, WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxPayRefundDTO), WX_PAY_KEY), String.class)), WxPayRefundResultDTO.class);
-        if (wxPayRefundResultDTO.getResult_code().equals("SUCCESS") && wxPayRefundResultDTO.getReturn_code().equals("SUCCESS")) {
+        if (wxPayRefundResultDTO.getResult_code().equals("SUCCESS")
+                && wxPayRefundResultDTO.getReturn_code().equals("SUCCESS")) {
             TblBillRefund tblBillRefund = TblBillRefund.builder().id(refundId).amount(totalRefund).billId(billId).time(new Date()).build();
             tblBillRefundMapper.insert(tblBillRefund);
         } else {
-            throw new RuntimeException("退款发生异常");
+            throw new BusinessException(REFUND_ERROR);
         }
     }
 
@@ -526,7 +542,8 @@ public class UserServiceImpl implements UserService {
         if (tblRecord.getAvailableNum() < 1) {
             return CommonResult.builder().status(400).msg("核销失败,票数不足").build();
         }
-        tblRecordCustomizedMapper.cancellation2Upd(recordId);
+        // todo
+        // tblRecordCustomizedMapper.cancellation2Upd(recordId);
         dealCheckLog(tblRecord);
         return CommonResult.builder().status(200).msg("核销成功").build();
     }
@@ -574,17 +591,6 @@ public class UserServiceImpl implements UserService {
                 .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
         List<VCheck> vChecks = vCheckMapper.selectByExample(example);
         return CommonResult.builder().status(200).msg("查询成功").data(vChecks).build();
-    }
-
-    @Override
-    public CommonResult selectBills(String phoneNum) {
-        Example example = new Example(TblBill.class, true, true);
-        example.createCriteria()
-                .andEqualTo("phoneNum", phoneNum)
-                .andEqualTo("status", 1)
-                .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
-        List<TblBill> tblBills = tblBillMapper.selectByExample(example);
-        return CommonResult.builder().status(200).msg("查询成功").data(tblBills).build();
     }
 
 }

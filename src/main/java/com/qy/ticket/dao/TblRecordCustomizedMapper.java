@@ -19,9 +19,9 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
             + " where id = #{id}")
     int charge2Upd(@Param("id") Long id, @Param("amount") Integer amount, @Param("returnableAmount") Integer returnableAmount, @Param("ticketNum") Integer ticketNum);
 
-    @Update("update tbl_record set available_num = 0,used_num = total_num"
+    @Update("update tbl_record set available_num = 0,used_num = effective_num,income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"
             + " where id = #{id}")
-    int cancellation2Upd(@Param("id") Long id);
+    int cancellation2Upd(@Param("id") Long id, @Param("amount") Integer refundAmount);
 
     @Update("update tbl_record set reason = '指定金额退款'"
             + " where id = #{id}")
@@ -35,16 +35,17 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
             "</script>")
     int cancellationAll2Upd(@Param("ids") List<Long> ids);
 
-    @Update("update tbl_record set effective_num = effective_num - #{ticketNum},available_num = available_num - #{ticketNum}"
+    @Update("update tbl_record set effective_num = effective_num - #{ticketNum},available_num = available_num - #{ticketNum}," +
+            "income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"
             + " where id = #{id}")
-    int refund2Upd(@Param("id") Long id,@Param("ticketNum") Integer ticketNum);
+    int refund2Upd(@Param("id") Long id, @Param("ticketNum") Integer ticketNum, @Param("refundAmount") Integer refundAmount);
 
     @Select("select sum(amount) as amount,sum(refund_amount) as refundAmount,sum(income) as income,sum(effective_num) as effectiveNum"
-                    + " from tbl_record"
-                    + " where time >= #{startTime}"
-                    + " and time <= #{endTime}"
-                    + " and park_id = #{parkId}"
-                    + " and product_id =#{productId}")
+            + " from tbl_record"
+            + " where time >= #{startTime}"
+            + " and time <= #{endTime}"
+            + " and park_id = #{parkId}"
+            + " and product_id =#{productId}")
     TblRecord Sum(@Param("startTime") String startTime, @Param("endTime") String endTime, @Param("parkId") Long parkId, @Param("productId") Long productId);
 
     @Select(
@@ -59,12 +60,12 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
     List<TblRecord> Day(@Param("startTime") String startTime, @Param("endTime") String endTime, @Param("parkId") Long parkId, @Param("productId") Long productId);
 
     @Select("select sum(amount) as amount,sum(refund_amount) as refundAmount,sum(income) as income,sum(effective_num) as effectiveNum,DATE_FORMAT( time, '%Y-%m-%d' ) AS time"
-                    + " from tbl_record"
-                    + " where time >= #{startTime}"
-                    + " and time <= #{endTime}"
-                    + " and park_id = #{parkId}"
-                    + " and product_id =#{productId}"
-                    + " GROUP BY "
-                    + " DATE_FORMAT( time, '%Y-%m' ) order by DATE_FORMAT( time, '%Y-%m' ) DESC")
+            + " from tbl_record"
+            + " where time >= #{startTime}"
+            + " and time <= #{endTime}"
+            + " and park_id = #{parkId}"
+            + " and product_id =#{productId}"
+            + " GROUP BY "
+            + " DATE_FORMAT( time, '%Y-%m' ) order by DATE_FORMAT( time, '%Y-%m' ) DESC")
     List<TblRecord> Month(@Param("startTime") String startTime, @Param("endTime") String endTime, @Param("parkId") Long parkId, @Param("productId") Long productId);
 }

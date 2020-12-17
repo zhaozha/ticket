@@ -56,6 +56,11 @@ public class UserController {
         return userService.unifiedorder(tblBillDTO);
     }
 
+    @GetMapping("/bill/phoneNum/{phoneNum}")
+    public CommonResult selectBills(@PathVariable String phoneNum) throws Exception {
+        return userService.selectBills(phoneNum);
+    }
+
     @PostMapping("/wx/refund")
     public CommonResult refund(@RequestBody TblRefundDTO tblRefundDTO) throws Exception {
         return userService.refund(tblRefundDTO.getRecordId(), tblRefundDTO);
@@ -69,11 +74,6 @@ public class UserController {
     @GetMapping("/cancellation/phoneNum/{phoneNum}")
     public CommonResult selectCancellation(@PathVariable String phoneNum) throws Exception {
         return userService.selectCancellation(phoneNum);
-    }
-
-    @GetMapping("/bill/phoneNum/{phoneNum}")
-    public CommonResult selectBills(@PathVariable String phoneNum) throws Exception {
-        return userService.selectBills(phoneNum);
     }
 
     @UserLock

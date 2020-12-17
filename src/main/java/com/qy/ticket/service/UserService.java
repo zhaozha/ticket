@@ -76,6 +76,14 @@ public interface UserService {
     String wxPayConfirm(String xmlStr) throws Exception;
 
     /**
+     * 查询充值记录
+     *
+     * @param phoneNum 用户手机号
+     * @return 统一返回
+     */
+    CommonResult selectBills(String phoneNum) throws Exception;
+
+    /**
      * 根据票数退款
      *
      * @param tblRefundDTO 退款
@@ -119,11 +127,4 @@ public interface UserService {
      */
     CommonResult selectCancellation(String phoneNum) throws Exception;
 
-    /**
-     * 查询充值记录
-     *
-     * @param phoneNum 用户手机号
-     * @return 统一返回
-     */
-    CommonResult selectBills(String phoneNum) throws Exception;
 }

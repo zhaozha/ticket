@@ -15,7 +15,7 @@ public interface TblBillCustomizedMapper extends QueryMapper<TblBill> {
             + " where id = #{id} and status = 0")
     int change2PayStatus(@Param("id") Long id);
 
-    @Update("update tbl_bill set refund_amount = refund_amount - #{refundAmount} "
+    @Update("update tbl_bill set refund_amount = refund_amount + #{refundAmount} "
             + " where id = #{id}")
     int refund2Upd(@Param("id") Long id, @Param("refundAmount") Integer refundAmount);
 }
