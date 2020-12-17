@@ -34,6 +34,22 @@ public class UserController {
         return userService.wxRegister(tblUserDto);
     }
 
+    @IgnoreUserToken
+    @GetMapping("/ticket/productId/{productId}/parkId/{parkId}")
+    public CommonResult ticket(@PathVariable Long productId, @PathVariable Long parkId) throws Exception {
+        return userService.ticket(productId, parkId);
+    }
+
+    @GetMapping("/record/phoneNum/{phoneNum}/status/{status}/productId/{productId}/parkId/{parkId}")
+    public CommonResult record(@PathVariable String phoneNum, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
+        return userService.record(phoneNum, status, productId, parkId);
+    }
+
+    @GetMapping("/history/record/phoneNum/{phoneNum}/date/{date}/status/{status}/productId/{productId}/parkId/{parkId}")
+    public CommonResult historyRecord(@PathVariable String phoneNum, @PathVariable String date, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
+        return userService.historyRecord(phoneNum, date, status, productId, parkId);
+    }
+
     @UserLock
     @PostMapping("/wx/unifiedorder")
     public CommonResult unifiedorder(@RequestBody TblBillDTO tblBillDTO) throws Exception {
@@ -48,21 +64,6 @@ public class UserController {
     @PostMapping("/wx/special/refund")
     public CommonResult specialRefund(@RequestBody TblSpecialRefundDTO tblSpecialRefundDTO) throws Exception {
         return userService.specialRefund(tblSpecialRefundDTO.getRecordId(), tblSpecialRefundDTO);
-    }
-
-    @GetMapping("/ticket/productId/{productId}/parkId/{parkId}")
-    public CommonResult ticket(@PathVariable Long productId, @PathVariable Long parkId) throws Exception {
-        return userService.ticket(productId, parkId);
-    }
-
-    @GetMapping("/record/phoneNum/{phoneNum}/status/{status}/productId/{productId}/parkId/{parkId}")
-    public CommonResult record(@PathVariable String phoneNum, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
-        return userService.record(phoneNum, status, productId, parkId);
-    }
-
-    @GetMapping("/history/record/phoneNum/{phoneNum}/date/{date}/status/{status}/productId/{productId}/parkId/{parkId}")
-    public CommonResult historyRecord(@PathVariable String phoneNum, @PathVariable String date, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
-        return userService.historyRecord(phoneNum, date, status, productId, parkId);
     }
 
     @GetMapping("/cancellation/phoneNum/{phoneNum}")

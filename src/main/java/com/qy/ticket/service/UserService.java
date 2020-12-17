@@ -5,7 +5,6 @@ import com.qy.ticket.dto.user.TblBillDTO;
 import com.qy.ticket.dto.user.TblRefundDTO;
 import com.qy.ticket.dto.user.TblSpecialRefundDTO;
 import com.qy.ticket.dto.user.TblUserDto;
-import com.qy.ticket.entity.TblUser;
 
 /**
  * @author zhaozha
@@ -29,22 +28,6 @@ public interface UserService {
     CommonResult wxRegister(TblUserDto tblUserDto) throws Exception;
 
     /**
-     * 微信支付-统一下单
-     *
-     * @param tblBillDTO 账单
-     * @return 统一返回
-     */
-    CommonResult unifiedorder(TblBillDTO tblBillDTO) throws Exception;
-
-    /**
-     * 微信充值回调
-     *
-     * @param xmlStr 微信返回xml报文
-     * @return 统一返回
-     */
-    String wxPayConfirm(String xmlStr) throws Exception;
-
-    /**
      * 查询票信息
      *
      * @param productId 产品编号
@@ -52,6 +35,7 @@ public interface UserService {
      * @return 统一返回
      */
     CommonResult ticket(Long productId, Long parkId) throws Exception;
+
 
     /**
      * 根据手机号查行程
@@ -74,6 +58,22 @@ public interface UserService {
      * @return 统一返回
      */
     CommonResult historyRecord(String phoneNum, String date, Integer status, Long productId, Long parkId);
+
+    /**
+     * 微信支付-统一下单
+     *
+     * @param tblBillDTO 账单
+     * @return 统一返回
+     */
+    CommonResult unifiedorder(TblBillDTO tblBillDTO) throws Exception;
+
+    /**
+     * 微信充值回调
+     *
+     * @param xmlStr 微信返回xml报文
+     * @return 统一返回
+     */
+    String wxPayConfirm(String xmlStr) throws Exception;
 
     /**
      * 根据票数退款

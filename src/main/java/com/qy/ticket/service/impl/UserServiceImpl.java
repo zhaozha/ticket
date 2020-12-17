@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import static com.qy.ticket.constant.RedisConstant.KEY_TICKET_SEQ;
 import static com.qy.ticket.constant.SystemConstant.*;
+import static com.qy.ticket.exception.EumException.RECORD_NOT_EXIST;
 import static com.qy.ticket.util.WXPayConstants.DOMAIN_API;
 import static com.qy.ticket.util.WXPayConstants.REFUND_URL_SUFFIX;
 import static com.qy.ticket.util.WXPayConstants.UNIFIEDORDER_URL_SUFFIX;
@@ -147,6 +148,39 @@ public class UserServiceImpl implements UserService {
         bucket.set(token, expirationTimeInSecond, TimeUnit.SECONDS);
         jsonObject.put("token", token);
         return jsonObject;
+    }
+
+    @Override
+    public CommonResult ticket(Long productId, Long parkId) throws Exception {
+        List<VTicket> vTickets = MapperUtil.getListByKVs(VTicket.class, vTicketMapper, "productId", productId, "parkId", parkId);
+        return CommonResult.builder().status(200).msg("查询成功").data(vTickets).build();
+    }
+
+    @Override
+    public CommonResult record(String phoneNum, Integer status, Long productId, Long parkId) throws Exception {
+        return historyRecord(phoneNum, new SimpleDateFormat("yyyy-MM-dd").format(new Date()), status, productId, parkId);
+    }
+
+    @Override
+    public CommonResult historyRecord(String phoneNum, String date, Integer status, Long productId, Long parkId) {
+        Example example = new Example(TblRecord.class, true, true);
+        example.setOrderByClause("time desc");
+        Example.Criteria criteria = example.createCriteria();
+        if (0 == status) {
+            criteria.andGreaterThan("availableNum", 0);
+        }
+        if (-1L != productId) {
+            criteria.andEqualTo("productId", productId);
+        }
+        if (-1L != parkId) {
+            criteria.andEqualTo("parkId", parkId);
+        }
+        criteria.andLike("time", date + "%").andEqualTo("phoneNum", phoneNum);
+        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+        if (CollectionUtils.isEmpty(tblRecords)) {
+            return new CommonResult(RECORD_NOT_EXIST);
+        }
+        return CommonResult.builder().status(200).msg("查询成功").data(tblRecords).build();
     }
 
 
@@ -330,39 +364,6 @@ public class UserServiceImpl implements UserService {
         Integer returnableAmount = tblBillChild.getReturnableAmount();
         Integer ticketNum = tblBillChild.getTicketNum();
         tblRecordCustomizedMapper.charge2Upd(id, amount, returnableAmount, ticketNum);
-    }
-
-
-    @Override
-    public CommonResult ticket(Long productId, Long parkId) throws Exception {
-        List<VTicket> vTickets = MapperUtil.getListByKVs(VTicket.class, vTicketMapper, "productId", productId, "parkId", parkId);
-        return CommonResult.builder().status(200).msg("查询成功").data(vTickets).build();
-    }
-
-    @Override
-    public CommonResult record(String phoneNum, Integer status, Long productId, Long parkId) throws Exception {
-        return historyRecord(phoneNum, new SimpleDateFormat("yyyy-MM-dd").format(new Date()), status, productId, parkId);
-    }
-
-    @Override
-    public CommonResult historyRecord(String phoneNum, String date, Integer status, Long productId, Long parkId) {
-        Example example = new Example(TblRecord.class, true, true);
-        Example.Criteria criteria = example.createCriteria();
-        if (0 == status) {
-            criteria.andGreaterThan("availableNum", 0);
-        }
-        if (-1L != productId) {
-            criteria.andEqualTo("productId", productId);
-        }
-        if (-1L != parkId) {
-            criteria.andEqualTo("parkId", parkId);
-        }
-        criteria.andLike("time", date + "%").andEqualTo("phoneNum", phoneNum);
-        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
-        if (tblRecords.isEmpty()) {
-            return CommonResult.builder().status(400).msg("无数据").build();
-        }
-        return CommonResult.builder().status(200).msg("查询成功").data(tblRecords).build();
     }
 
     @RecordLock

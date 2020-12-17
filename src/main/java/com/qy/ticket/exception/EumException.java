@@ -16,8 +16,10 @@ public enum EumException {
     FILE_UPLOAD_ERROR(30007, "文件上传失败", null),
     PARAMETER_VALIDATION_ERROR(30008, "参数有误", null),
     NOT_AGENT_AUTH(30009, "权限不足", null),
-    // 登录异常
-    WX_LOGIN_CODE_ERROR(21001, "code错误", null);
+    // 登录异常 21xxx
+    WX_LOGIN_CODE_ERROR(21001, "code错误", null),
+    // 行程异常 22xxx
+    RECORD_NOT_EXIST(22001, "无记录", null);
     private Integer status;
     private String msg;
     private Object data;
