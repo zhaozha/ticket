@@ -353,7 +353,8 @@ public class ManagerServiceImpl implements ManagerService {
 
     @Override
     public CommonResult cancellation(CancellationDto cancellationDto) {
-        tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
+        // todo
+        //tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
         dealCheckLog(cancellationDto);
         return new CommonResult(200, "核销成功", null);
     }

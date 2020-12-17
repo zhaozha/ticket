@@ -430,9 +430,9 @@ public class UserServiceImpl implements UserService {
         }
 
         CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
-        // 退款成功,变更可核销票数、有效票数、退款金额、订单收入
+        // 退款成功,变更有效票数、可核销票数、退款金额、订单收入
         if (commonResult.getStatus() == 200) {
-            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, totalRefundAmount);
+            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, ticketNum, totalRefundAmount);
         }
         return commonResult;
     }
@@ -548,40 +548,53 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Transactional
     @Override
-    public CommonResult cancellation(Long recordId) throws Exception {
-        TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
-        if (null == tblRecord) {
-            return CommonResult.builder().status(10000).msg("无效票").build();
-        }
-        if (tblRecord.getAvailableNum() < 1) {
-            return CommonResult.builder().status(400).msg("核销失败,票数不足").build();
-        }
-        // todo
-        // tblRecordCustomizedMapper.cancellation2Upd(recordId);
-        dealCheckLog(tblRecord);
-        return CommonResult.builder().status(200).msg("核销成功").build();
+    public CommonResult selectCancellation(String phoneNum) {
+        Example example = new Example(VCheck.class, true, true);
+        example.createCriteria()
+                .andEqualTo("phoneNum", phoneNum)
+                .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
+        List<VCheck> vChecks = vCheckMapper.selectByExample(example);
+        return CommonResult.builder().status(200).msg("查询成功").data(vChecks).build();
     }
 
     @Transactional
     @Override
     public CommonResult cancellationByCard(String phoneNum, Long parkId, Long productId, String id) throws Exception {
-        // 查出所有有票的行程
+        // 查出存在可核销票的行程
         CommonResult commonResult = record(phoneNum, 0, productId, parkId);
-        if (commonResult.getStatus() == 400) {
+        if (commonResult.getStatus() != 400) {
             return commonResult;
         }
+
         List<TblRecord> tblRecords = JSONArray.parseArray(JSON.toJSONString(commonResult.getData()), TblRecord.class);
         if (!CollectionUtils.isEmpty(tblRecords)) {
+
             for (TblRecord tblRecord : tblRecords) {
-                circleRefund(tblRecord, tblRecord.getAvailableNum() * (tblRecord.getReturnableAmount() / tblRecord.getTotalNum()));
+                Long recordId = tblRecord.getId();
+                this.refund(recordId, tblRecord);
             }
-            List<Long> collect = tblRecords.stream().map(TblRecord::getId).collect(Collectors.toList());
-            tblRecordCustomizedMapper.cancellationAll2Upd(collect);
+
             tblRecords.forEach(this::dealCheckLog);
         }
         return CommonResult.builder().status(200).msg("核销成功").data(null).build();
+    }
+
+    @RecordLock
+    @Transactional
+    @Override
+    public CommonResult refund(Long recordId, TblRecord tblRecord) throws Exception {
+        Integer availableNum = tblRecord.getAvailableNum();
+        // 退款金额计算
+        Integer returnableAmount = tblRecord.getReturnableAmount();
+        Integer totalRefundAmount = returnableAmount * availableNum;
+
+        CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
+        // 退款成功,变更有效票数、可核销票数、退款金额、订单收入
+        if (commonResult.getStatus() == 200) {
+            tblRecordCustomizedMapper.refund2Upd(recordId, 0, availableNum, totalRefundAmount);
+        }
+        return commonResult;
     }
 
     /**
@@ -599,14 +612,20 @@ public class UserServiceImpl implements UserService {
         tblCheckMapper.insert(tblCheck);
     }
 
-    @Override
-    public CommonResult selectCancellation(String phoneNum) {
-        Example example = new Example(VCheck.class, true, true);
-        example.createCriteria()
-                .andEqualTo("phoneNum", phoneNum)
-                .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
-        List<VCheck> vChecks = vCheckMapper.selectByExample(example);
-        return CommonResult.builder().status(200).msg("查询成功").data(vChecks).build();
-    }
+//    @Transactional
+//    @Override
+//    public CommonResult cancellation(Long recordId) throws Exception {
+//        TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
+//        if (null == tblRecord) {
+//            return CommonResult.builder().status(10000).msg("无效票").build();
+//        }
+//        if (tblRecord.getAvailableNum() < 1) {
+//            return CommonResult.builder().status(400).msg("核销失败,票数不足").build();
+//        }
+//        // todo
+//        // tblRecordCustomizedMapper.cancellation2Upd(recordId);
+//        dealCheckLog(tblRecord);
+//        return CommonResult.builder().status(200).msg("核销成功").build();
+//    }
 
 }

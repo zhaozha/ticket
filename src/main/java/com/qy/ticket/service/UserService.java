@@ -5,6 +5,7 @@ import com.qy.ticket.dto.user.TblBillDTO;
 import com.qy.ticket.dto.user.TblRefundDTO;
 import com.qy.ticket.dto.user.TblSpecialRefundDTO;
 import com.qy.ticket.dto.user.TblUserDto;
+import com.qy.ticket.entity.TblRecord;
 
 /**
  * @author zhaozha
@@ -102,13 +103,12 @@ public interface UserService {
     CommonResult specialRefund(Long recordId, TblSpecialRefundDTO tblSpecialRefundDTO) throws Exception;
 
     /**
-     * 核销
+     * 核销记录查询
      *
-     * @param recordId 行程号
+     * @param phoneNum 用户手机号
      * @return 统一返回
-     * @throws Exception
      */
-    CommonResult cancellation(Long recordId) throws Exception;
+    CommonResult selectCancellation(String phoneNum) throws Exception;
 
     /**
      * 胸卡核销
@@ -120,11 +120,21 @@ public interface UserService {
     CommonResult cancellationByCard(String phoneNum, Long parkId, Long productId, String id) throws Exception;
 
     /**
-     * 核销记录查询
+     * 退可核销票押金
      *
-     * @param phoneNum 用户手机号
+     * @param tblRecord 订单
      * @return 统一返回
+     * @throws Exception
      */
-    CommonResult selectCancellation(String phoneNum) throws Exception;
+    CommonResult refund(Long recordId, TblRecord tblRecord) throws Exception;
+
+//    /**
+//     * 核销
+//     *
+//     * @param recordId 行程号
+//     * @return 统一返回
+//     * @throws Exception
+//     */
+//    CommonResult cancellation(Long recordId) throws Exception;
 
 }

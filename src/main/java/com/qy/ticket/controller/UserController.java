@@ -7,7 +7,6 @@ import com.qy.ticket.dto.user.TblBillDTO;
 import com.qy.ticket.dto.user.TblRefundDTO;
 import com.qy.ticket.dto.user.TblSpecialRefundDTO;
 import com.qy.ticket.dto.user.TblUserDto;
-import com.qy.ticket.entity.TblUser;
 import com.qy.ticket.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
