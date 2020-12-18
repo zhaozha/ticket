@@ -49,3 +49,9 @@ redisson:
   # 连接池配置
   connectionPoolSize: 10
   connectionMinimumIdleSize: 5
+
+# 日志level
+logging:
+  level:
+    tk.mybatis: DEBUG
+    com.qy.ticket: DEBUG
