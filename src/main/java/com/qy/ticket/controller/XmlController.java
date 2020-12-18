@@ -1,5 +1,6 @@
 package com.qy.ticket.controller;
 
+import com.qy.ticket.annotation.IgnoreUserToken;
 import com.qy.ticket.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.IOUtils;
@@ -21,6 +22,7 @@ import java.io.BufferedOutputStream;
 public class XmlController {
   private final UserService userServiceImpl;
 
+  @IgnoreUserToken
   @PostMapping(value = "/wx/confirm")
   public void wxPayConfirm(HttpServletRequest request, HttpServletResponse response) {
     ServletInputStream input = null;

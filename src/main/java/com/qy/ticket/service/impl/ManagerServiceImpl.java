@@ -21,6 +21,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
@@ -285,13 +286,14 @@ public class ManagerServiceImpl implements ManagerService {
         }
         criteria.andLike("time", DateUtil.yyyyMMdd.format(new Date()) + "%");
         List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
-        return new CommonResult(200, "变更成功", tblRecords);
+        return new CommonResult(200, "查询成功", tblRecords);
     }
 
+    @Transactional
     @Override
     public CommonResult cancellation(CancellationDto cancellationDto) {
-        tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
         dealCheckLog(cancellationDto);
+        tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
         return new CommonResult(200, "核销成功", null);
     }
 
@@ -321,7 +323,9 @@ public class ManagerServiceImpl implements ManagerService {
                 list.add(tblCheck);
             }
         }
-        tblCheckCustomizedMapper.insertList(list);
+        if (!CollectionUtils.isEmpty(list)) {
+            tblCheckCustomizedMapper.insertList(list);
+        }
     }
 
     @Override

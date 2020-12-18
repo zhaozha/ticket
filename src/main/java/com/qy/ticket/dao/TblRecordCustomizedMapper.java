@@ -15,7 +15,7 @@ import java.util.List;
  **/
 public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
     @Update("update tbl_record set amount = amount + #{amount},income = income + #{amount}"
-            + " ,effective_num = effective_num + #{ticketNum},available_num = available_num + #{ticketNum},total_num = total_num + {ticketNum}"
+            + " ,effective_num = effective_num + #{ticketNum},available_num = available_num + #{ticketNum},total_num = total_num + #{ticketNum}"
             + " where id = #{id}")
     int charge2Upd(@Param("id") Long id, @Param("amount") Integer amount, @Param("returnableAmount") Integer returnableAmount, @Param("ticketNum") Integer ticketNum);
 
