@@ -277,17 +277,67 @@ public class UserServiceImpl implements UserService {
         throw new BusinessException(UNIFIEDORDER_ERROR);
     }
 
-    @Override
+//    @Override
+//    @Transactional
+//    public String wxPayConfirm(String xmlStr) throws Exception {
+//        log.info("支付成功回调:{}", xmlStr);
+//        WxPayConformDTO wxPayConform = (WxPayConformDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(xmlStr), WxPayConformDTO.class);
+//        if (wxPayConform.getResult_code().equals("SUCCESS") && wxPayConform.getReturn_code().equals("SUCCESS")) {
+//            long billId = Long.parseLong(wxPayConform.getOut_trade_no());
+//            // 处理账单&接口幂等
+//            int i = tblBillCustomizedMapper.change2PayStatus(billId);
+//            if (i == 0) {
+//                return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
+//            }
+//
+//            TblBill tblBill = tblBillMapper.selectByPrimaryKey(billId);
+//            String phoneNum = tblBill.getPhoneNum();
+//
+//            Example example = new Example(TblRecord.class, true, true);
+//            example.createCriteria()
+//                    .andLike("time", DateUtil.yyyyMMdd.format(new Date()) + "%")
+//                    .andEqualTo("phoneNum", phoneNum);
+//            List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+//
+//            List<TblBillChild> tblBillChildren = MapperUtil.getListByKVs(TblBillChild.class, tblBillChildMapper, "billId", billId);
+//            for (TblBillChild tblBillChild : tblBillChildren) {
+//                // 子订单幂等
+//                int j = tblBillChildCustomizedMapper.change2PayStatus(tblBillChild.getId());
+//                if (j == 0) {
+//                    continue;
+//                }
+//                if (CollectionUtils.isEmpty(tblRecords)) {
+//                    fistChargeBusiness(tblBillChild);
+//                } else {
+//                    List<TblRecord> collect = tblRecords.stream().filter(s -> s.getTicketId().equals(tblBillChild.getTicketId())).collect(Collectors.toList());
+//                    if (CollectionUtils.isEmpty(collect)) {
+//                        fistChargeBusiness(tblBillChild);
+//                    } else {
+//                        secondChargeBusiness(collect.get(0), tblBillChild);
+//                    }
+//                }
+//            }
+//            return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
+//        }
+//        return null;
+
+//
+//    }
+
     @Transactional
-    public String wxPayConfirm(String xmlStr) throws Exception {
-        log.info("支付成功回调:{}", xmlStr);
-        WxPayConformDTO wxPayConform = (WxPayConformDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(xmlStr), WxPayConformDTO.class);
-        if (wxPayConform.getResult_code().equals("SUCCESS") && wxPayConform.getReturn_code().equals("SUCCESS")) {
-            long billId = Long.parseLong(wxPayConform.getOut_trade_no());
+    @Override
+    public NotifyRespDto notify(NotifyReqDto notifyReqDto) throws Exception {
+        String outTradeNo = notifyReqDto.getOutTradeNo();
+        String resultCode = notifyReqDto.getResultCode();
+        String returnCode = notifyReqDto.getReturnCode();
+        log.info("支付回调:notifyReqDto:{}", JSON.toJSONString(notifyReqDto));
+
+        if (returnCode.equals("SUCCESS") && resultCode.equals("SUCCESS")) {
+            long billId = Long.parseLong(outTradeNo);
             // 处理账单&接口幂等
             int i = tblBillCustomizedMapper.change2PayStatus(billId);
             if (i == 0) {
-                return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
+                return new NotifyRespDto("<![CDATA[SUCCESS]]>", "<![CDATA[OK]]>");
             }
 
             TblBill tblBill = tblBillMapper.selectByPrimaryKey(billId);
@@ -317,7 +367,7 @@ public class UserServiceImpl implements UserService {
                     }
                 }
             }
-            return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
+            return new NotifyRespDto("<![CDATA[SUCCESS]]>", "<![CDATA[OK]]>");
         }
         return null;
     }
