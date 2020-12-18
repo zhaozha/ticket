@@ -39,11 +39,13 @@ public class UserController {
         return userService.ticket(productId, parkId);
     }
 
+    @IgnoreUserToken
     @GetMapping("/record/phoneNum/{phoneNum}/status/{status}/productId/{productId}/parkId/{parkId}")
     public CommonResult record(@PathVariable String phoneNum, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
         return userService.record(phoneNum, status, productId, parkId);
     }
 
+    @IgnoreUserToken
     @GetMapping("/history/record/phoneNum/{phoneNum}/date/{date}/status/{status}/productId/{productId}/parkId/{parkId}")
     public CommonResult historyRecord(@PathVariable String phoneNum, @PathVariable String date, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
         return userService.historyRecord(phoneNum, date, status, productId, parkId);

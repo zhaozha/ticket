@@ -12,6 +12,8 @@ public class RedisConstant {
     public static final String MATCH_ALL = COLON + "*";
     // 用户token
     public static final String KEY_USER_TOKEN = "ticket2020:user:token";
+    // 管理员token
+    public static final String KEY_MANAGER_TOKEN = "ticket2020:manager:token";
     // 全局锁(保证用户单线程操作指定资源)
     public static final String KEY_USER_DISTRIBUTED_LOCK = "ticket2020:user:distribute:lock";
     // 行程锁

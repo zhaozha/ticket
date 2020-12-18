@@ -133,7 +133,7 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     private void buildLoginToken(JSONObject jsonObject, TblManager tblManager) {
-        RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_USER_TOKEN, tblManager.getId().toString()));
+        RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_MANAGER_TOKEN, tblManager.getId().toString()));
         Map<String, Object> map = new HashMap<>();
         map.put(CONTEXT_KEY_USER_ID, tblManager.getId());
         map.put(CONTEXT_KEY_USER_NAME, tblManager.getNickName());
