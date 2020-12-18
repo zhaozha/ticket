@@ -2,8 +2,6 @@ package com.qy.ticket.service;
 
 import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.user.*;
-import com.qy.ticket.dto.wx.NotifyReqDto;
-import com.qy.ticket.dto.wx.NotifyRespDto;
 import com.qy.ticket.entity.TblRecord;
 
 /**
@@ -70,10 +68,10 @@ public interface UserService {
     /**
      * 微信充值回调
      *
+     * @param xmlStr 微信返回xml报文
      * @return 统一返回
      */
-//    String wxPayConfirm(String xmlStr) throws Exception;
-    NotifyRespDto notify(NotifyReqDto notifyReqDto) throws Exception;
+    String wxPayConfirm(String xmlStr) throws Exception;
 
     /**
      * 查询充值记录
