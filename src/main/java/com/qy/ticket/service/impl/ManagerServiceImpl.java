@@ -326,10 +326,12 @@ public class ManagerServiceImpl implements ManagerService {
 
     @Override
     public CommonResult selectBillByDetail(String startTime, String endTime, Integer pageNum, Integer pageSize, Long parkId, Long productId, Boolean pageFlag) {
+        // 汇总
         TblRecord sum = tblRecordCustomizedMapper.Sum(startTime, endTime, parkId, productId);
         if (null == sum) {
             return CommonResult.builder().status(400).msg("无数据").build();
         }
+        // 明细
         Example example = new Example(TblRecord.class, true, true);
         example.setOrderByClause("time DESC");
         example.createCriteria()
@@ -359,6 +361,7 @@ public class ManagerServiceImpl implements ManagerService {
 
     @Override
     public CommonResult selectBillBySum(String startTime, String endTime, Integer pageNum, Integer pageSize, Long parkId, Long productId, Integer type, Boolean pageFlag) {
+        // 汇总
         TblRecord sum = tblRecordCustomizedMapper.Sum(startTime, endTime, parkId, productId);
         if (null == sum) {
             return CommonResult.builder().status(400).msg("无数据").build();
