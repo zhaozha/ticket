@@ -16,8 +16,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class WxUnifiedorderDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
-
     private String appid;
     private String mch_id;
     private String nonce_str;

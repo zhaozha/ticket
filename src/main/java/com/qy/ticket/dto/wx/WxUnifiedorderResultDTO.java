@@ -16,7 +16,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class WxUnifiedorderResultDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
 
     // 此字段是通信标识，非交易标识，交易是否成功需要查看result_code来判断
     private String return_code;

@@ -198,7 +198,7 @@ public class UserServiceImpl implements UserService {
                 .nonce_str(WXPayUtil.generateNonceStr())
                 .notify_url(WX_PAY_URL)
                 .out_trade_no(String.valueOf(billId))
-                .total_fee(tblBillDTO.getAmount() * 100)
+                .total_fee(tblBillDTO.getAmount())
                 .trade_type("JSAPI")
                 .build();
         // 微信统一下单接口调用

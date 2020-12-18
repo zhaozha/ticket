@@ -17,7 +17,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class WxPayConformDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
 
     @JacksonXmlProperty(localName = "return_code")
     private String return_code;

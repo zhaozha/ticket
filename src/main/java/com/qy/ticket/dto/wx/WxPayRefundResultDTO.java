@@ -16,7 +16,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class WxPayRefundResultDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
 
     private String return_code;
     private String return_msg;
