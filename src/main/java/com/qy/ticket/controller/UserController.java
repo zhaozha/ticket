@@ -55,16 +55,19 @@ public class UserController {
         return userService.unifiedorder(tblBillDTO);
     }
 
+    @IgnoreUserToken
     @GetMapping("/bill/phoneNum/{phoneNum}")
     public CommonResult selectBills(@PathVariable String phoneNum) throws Exception {
         return userService.selectBills(phoneNum);
     }
 
+    @IgnoreUserToken
     @PostMapping("/wx/refund")
     public CommonResult refund(@RequestBody TblRefundDTO tblRefundDTO) throws Exception {
         return userService.refund(tblRefundDTO.getRecordId(), tblRefundDTO);
     }
 
+    @IgnoreUserToken
     @PostMapping("/wx/special/refund")
     public CommonResult specialRefund(@RequestBody TblSpecialRefundDTO tblSpecialRefundDTO) throws Exception {
         return userService.specialRefund(tblSpecialRefundDTO.getRecordId(), tblSpecialRefundDTO);

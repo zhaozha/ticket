@@ -25,4 +25,8 @@ public class TblRefundTrainDTO implements Serializable {
 
   @NotNull(message = "管理员不可为空")
   private Long managerId;
+
+  @NotNull(message = "票数不可为空")
+  @Min(value = 0, message = "票数必须大于0")
+  private Integer ticketNum;
 }

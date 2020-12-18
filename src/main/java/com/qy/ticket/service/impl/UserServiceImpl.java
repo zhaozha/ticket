@@ -601,18 +601,21 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public CommonResult refundTrain(Long recordId, TblRefundTrainDTO tblRefundTrainDT) throws Exception {
-        // 票数合规检测
         TblRecord tblRecord = tblRecordMapper.selectByPrimaryKey(recordId);
-
         // 退款金额计算
+        Integer ticketNum = tblRefundTrainDT.getTicketNum();
+        // 不能超过有效票数
+        if (tblRecord.getEffectiveNum() < ticketNum) {
+            return new CommonResult(ORDER_REFUND_NUM_ERROR);
+        }
+
         Integer ticketPrice = tblRecord.getTicketPrice();
-        Integer effectiveNum = tblRecord.getEffectiveNum();
-        Integer totalRefundAmount = ticketPrice * effectiveNum;
+        Integer totalRefundAmount = ticketPrice * ticketNum;
 
         CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
         // 退款成功,变更有效票数、可核销票数、退款金额、订单收入
         if (commonResult.getStatus() == 200) {
-            tblRecordCustomizedMapper.refund2Upd(recordId, 0, effectiveNum, totalRefundAmount);
+            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, ticketNum, totalRefundAmount);
         }
         return commonResult;
     }
