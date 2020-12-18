@@ -97,6 +97,12 @@ public class ManagerController {
         return managerService.cancellation(cancellationDto);
     }
 
+    @UserLock
+    @PostMapping("/manager/wx/refund")
+    public CommonResult refund(@RequestBody TblRefundTrainDTO tblRefundTrainDTO) throws Exception {
+        return userService.refundTrain(tblRefundTrainDTO.getRecordId(), tblRefundTrainDTO);
+    }
+
     @IgnoreUserToken
     @GetMapping("/detail/parkId/{parkId}/productId/{productId}/startTime/{startTime}/endTime/{endTime}/pageNum/{pageNum}/pageSize/{pageSize}")
     public CommonResult selectBillByDetail(
@@ -158,11 +164,5 @@ public class ManagerController {
                          @PathVariable String startTime,
                          @PathVariable String endTime) {
         managerService.pdfMonth(response, startTime, endTime, parkId, productId);
-    }
-
-    @UserLock
-    @PostMapping("/manager/wx/refund")
-    public CommonResult refund(@RequestBody TblRefundTrainDTO tblRefundTrainDTO) throws Exception {
-        return userService.refundTrain(tblRefundTrainDTO.getRecordId(), tblRefundTrainDTO);
     }
 }

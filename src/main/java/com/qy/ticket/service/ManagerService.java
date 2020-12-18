@@ -25,14 +25,6 @@ public interface ManagerService {
 
     CommonResult selectManager(Long parkId, Long productId, Long managerId, Integer pageNum, Integer pageSize);
 
-    CommonResult selectBillByDetail(String startTime, String endTime, Integer pageNum, Integer pageSize, Long parkId, Long productId, Boolean pageFlag);
-
-    CommonResult selectBillBySum(String startTime, String endTime, Integer pageNum, Integer pageSize, Long parkId, Long productId, Integer type, Boolean pageFlag);
-
-    void pdfDay(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
-
-    void pdfMonth(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
-
     CommonResult selTicket(Long parkId, Long productId) throws Exception;
 
     CommonResult updTicketPrice(List<TicketPriceDto> ticketPriceDtos) throws Exception;
@@ -40,4 +32,12 @@ public interface ManagerService {
     CommonResult historyRecord(Integer status, Long productId, Long parkId);
 
     CommonResult cancellation(CancellationDto cancellationDto);
+
+    CommonResult selectBillByDetail(String startTime, String endTime, Integer pageNum, Integer pageSize, Long parkId, Long productId, Boolean pageFlag);
+
+    CommonResult selectBillBySum(String startTime, String endTime, Integer pageNum, Integer pageSize, Long parkId, Long productId, Integer type, Boolean pageFlag);
+
+    void pdfDay(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
+
+    void pdfMonth(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
 }

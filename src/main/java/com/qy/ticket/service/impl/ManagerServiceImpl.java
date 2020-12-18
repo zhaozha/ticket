@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
-import tk.mybatis.mapper.common.Mapper;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.servlet.http.HttpServletResponse;
@@ -125,7 +124,7 @@ public class ManagerServiceImpl implements ManagerService {
         if (!CollectionUtils.isEmpty(list)) {
             // 2级及以下给出范围
             if (tblManager.getLevel() <= 2) {
-                list = list.stream().filter(s -> s.getParkId().equals(tblManager.getParkId()) && s.getProductId().equals(tblManager.getProductId())).collect(Collectors.toList());
+                list = list.stream().filter(s -> s.getParkId().equals(tblManager.getParkId()) && s.getProductId().equals(tblManager.getProductId())).sorted(Comparator.comparing(LoginPowerDTO::getParkId)).collect(Collectors.toList());
             }
         }
         jsonObject.put("power", list);
@@ -245,6 +244,84 @@ public class ManagerServiceImpl implements ManagerService {
         jsonObject.put("count", pageInfo.getTotal());
         jsonObject.put("data", tblManagers);
         return CommonResult.builder().status(200).msg("查询成功").data(jsonObject).build();
+    }
+
+    @Override
+    public CommonResult selTicket(Long parkId, Long productId) throws Exception {
+        List<TblTicket> tblTickets = MapperUtil.getListByKVs(TblTicket.class, tblTicketMapper, "parkId", parkId, "productId", productId);
+        return new CommonResult(200, "查询成功", tblTickets);
+    }
+
+    @Override
+    public CommonResult updTicketPrice(List<TicketPriceDto> ticketPriceDtos) throws Exception {
+        if (!CollectionUtils.isEmpty(ticketPriceDtos)) {
+            for (TicketPriceDto ticketPriceDto : ticketPriceDtos) {
+                if (null == ticketPriceDto.getPrice()) {
+                    continue;
+                }
+                TblTicket tblTicket = new TblTicket();
+                BeanUtils.copyProperties(ticketPriceDto, tblTicket);
+                tblTicketMapper.updateByPrimaryKeySelective(tblTicket);
+            }
+        }
+        return new CommonResult(200, "变更成功", null);
+    }
+
+    @Override
+    public CommonResult historyRecord(Integer status, Long productId, Long parkId) {
+        Example example = new Example(TblRecord.class, true, true);
+        Example.Criteria criteria = example.createCriteria();
+        // 0 查询未核销 1 查询已核销
+        if (0 == status) {
+            criteria.andGreaterThan("availableNum", 0);
+        } else {
+            criteria.andEqualTo("availableNum", 0);
+        }
+        if (-1L != productId) {
+            criteria.andEqualTo("productId", productId);
+        }
+        if (-1L != parkId) {
+            criteria.andEqualTo("parkId", parkId);
+        }
+        criteria.andLike("time", DateUtil.yyyyMMdd.format(new Date()) + "%");
+        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+        return new CommonResult(200, "变更成功", tblRecords);
+    }
+
+    @Override
+    public CommonResult cancellation(CancellationDto cancellationDto) {
+        tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
+        dealCheckLog(cancellationDto);
+        return new CommonResult(200, "核销成功", null);
+    }
+
+    /**
+     * 核销记录
+     *
+     * @param
+     */
+    private void dealCheckLog(CancellationDto cancellationDto) {
+        Example example = new Example(TblRecord.class, true, true);
+        example.createCriteria().andIn("id", cancellationDto.getIds());
+        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+
+        List<TblCheck> list = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(tblRecords)) {
+            for (TblRecord tblRecord : tblRecords) {
+                if (tblRecord.getAvailableNum() == 0) {
+                    continue;
+                }
+                TblCheck tblCheck = new TblCheck();
+                BeanUtils.copyProperties(tblRecord, tblCheck);
+                tblCheck.setRecordId(tblRecord.getId());
+                tblCheck.setTime(new Date());
+                tblCheck.setTicketNum(tblRecord.getEffectiveNum());
+                tblCheck.setId(idBaseService.genId());
+                tblCheck.setCardNo("1");
+                list.add(tblCheck);
+            }
+        }
+        tblCheckCustomizedMapper.insertList(list);
     }
 
     @Override
@@ -381,78 +458,5 @@ public class ManagerServiceImpl implements ManagerService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public CommonResult selTicket(Long parkId, Long productId) throws Exception {
-        List<TblTicket> tblTickets = MapperUtil.getListByKVs(TblTicket.class, tblTicketMapper, "parkId", parkId, "productId", productId);
-        return new CommonResult(200, "查询成功", tblTickets);
-    }
-
-    @Override
-    public CommonResult updTicketPrice(List<TicketPriceDto> ticketPriceDtos) throws Exception {
-        if (!CollectionUtils.isEmpty(ticketPriceDtos)) {
-            for (TicketPriceDto ticketPriceDto : ticketPriceDtos) {
-                if (null == ticketPriceDto.getPrice()) {
-                    continue;
-                }
-                TblTicket tblTicket = new TblTicket();
-                BeanUtils.copyProperties(ticketPriceDto, tblTicket);
-                tblTicketMapper.updateByPrimaryKeySelective(tblTicket);
-            }
-        }
-        return new CommonResult(200, "变更成功", null);
-    }
-
-    @Override
-    public CommonResult historyRecord(Integer status, Long productId, Long parkId) {
-        Example example = new Example(TblRecord.class, true, true);
-        Example.Criteria criteria = example.createCriteria();
-        if (0 == status) {
-            criteria.andGreaterThan("availableNum", 0);
-        } else {
-            criteria.andEqualTo("availableNum", 0);
-        }
-        if (-1L != productId) {
-            criteria.andEqualTo("productId", productId);
-        }
-        if (-1L != parkId) {
-            criteria.andEqualTo("parkId", parkId);
-        }
-        criteria.andLike("time", DateUtil.yyyyMMdd.format(new Date()) + "%");
-        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
-        return new CommonResult(200, "变更成功", tblRecords);
-    }
-
-    @Override
-    public CommonResult cancellation(CancellationDto cancellationDto) {
-        tblRecordCustomizedMapper.cancellationAll2Upd(cancellationDto.getIds());
-        dealCheckLog(cancellationDto);
-        return new CommonResult(200, "核销成功", null);
-    }
-
-    /**
-     * 核销记录
-     *
-     * @param
-     */
-    private void dealCheckLog(CancellationDto cancellationDto) {
-        Example example = new Example(TblRecord.class, true, true);
-        example.createCriteria().andIn("id", cancellationDto.getIds());
-        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
-        List<TblCheck> list = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(tblRecords)) {
-            for (TblRecord tblRecord : tblRecords) {
-                TblCheck tblCheck = new TblCheck();
-                BeanUtils.copyProperties(tblRecord, tblCheck);
-                tblCheck.setRecordId(tblRecord.getId());
-                tblCheck.setTime(new Date());
-                tblCheck.setTicketNum(tblRecord.getEffectiveNum());
-                tblCheck.setId(idBaseService.genId());
-                tblCheck.setCardNo("1");
-                list.add(tblCheck);
-            }
-        }
-        tblCheckCustomizedMapper.insertList(list);
     }
 }
