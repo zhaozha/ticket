@@ -39,6 +39,41 @@ public class ManagerController {
     }
 
     @IgnoreUserToken
+    @PostMapping("/manager/login")
+    public CommonResult login(@RequestBody ManagerLoginDTO managerLoginDTO) throws Exception {
+        return managerService.login(managerLoginDTO);
+    }
+
+    @IgnoreUserToken
+    @PostMapping("/manager/add")
+    public CommonResult addManager(@RequestBody AddManagerDTO addManagerDTO) throws Exception {
+        return managerService.addManager(addManagerDTO);
+    }
+
+    @IgnoreUserToken
+    @PostMapping("/manager/delete")
+    public CommonResult deleteManager(@RequestBody DeleteManagerDTO deleteManagerDTO) {
+        return managerService.deleteManager(deleteManagerDTO);
+    }
+
+    @IgnoreUserToken
+    @PostMapping("/manager/update")
+    public CommonResult updateManager(@RequestBody AddManagerDTO addManagerDTO) throws Exception{
+        return managerService.updateManager(addManagerDTO);
+    }
+
+    @IgnoreUserToken
+    @GetMapping("/manager/parkId/{parkId}/productId/{productId}/managerId/{managerId}/pageNum/{pageNum}/pageSize/{pageSize}")
+    public CommonResult selectManager(
+            @PathVariable Long parkId,
+            @PathVariable Long productId,
+            @PathVariable Long managerId,
+            @PathVariable Integer pageNum,
+            @PathVariable Integer pageSize) {
+        return managerService.selectManager(parkId, productId, managerId, pageNum, pageSize);
+    }
+
+    @IgnoreUserToken
     @GetMapping("/manager/ticket/parkId/{parkId}/productId/{productId}")
     public CommonResult selTicket(@PathVariable Long parkId, @PathVariable Long productId) throws Exception {
         return managerService.selTicket(parkId, productId);
@@ -60,42 +95,6 @@ public class ManagerController {
     @PostMapping("/manager/ticket/cancellation")
     public CommonResult cancellation(@RequestBody CancellationDto cancellationDto) throws Exception {
         return managerService.cancellation(cancellationDto);
-    }
-
-
-    @IgnoreUserToken
-    @PostMapping("/manager/add")
-    public CommonResult addManager(@RequestBody AddManagerDTO addManagerDTO) {
-        return managerService.addManager(addManagerDTO);
-    }
-
-    @IgnoreUserToken
-    @PostMapping("/manager/delete")
-    public CommonResult deleteManager(@RequestBody DeleteManagerDTO deleteManagerDTO) {
-        return managerService.deleteManager(deleteManagerDTO);
-    }
-
-    @IgnoreUserToken
-    @PostMapping("/manager/update")
-    public CommonResult updateManager(@RequestBody AddManagerDTO addManagerDTO) {
-        return managerService.updateManager(addManagerDTO);
-    }
-
-    @IgnoreUserToken
-    @GetMapping("/manager/parkId/{parkId}/productId/{productId}/managerId/{managerId}/pageNum/{pageNum}/pageSize/{pageSize}")
-    public CommonResult selectManager(
-            @PathVariable Long parkId,
-            @PathVariable Long productId,
-            @PathVariable Long managerId,
-            @PathVariable Integer pageNum,
-            @PathVariable Integer pageSize) {
-        return managerService.selectManager(parkId, productId, managerId, pageNum, pageSize);
-    }
-
-    @IgnoreUserToken
-    @PostMapping("/manager/login")
-    public CommonResult login(@RequestBody ManagerLoginDTO managerLoginDTO) {
-        return managerService.login(managerLoginDTO);
     }
 
     @IgnoreUserToken

@@ -11,13 +11,17 @@ import java.util.List;
  * @date 2020/1/10 下午4:59
  */
 public interface ManagerService {
-    CommonResult login(ManagerLoginDTO managerLoginDTO);
+    CommonResult wxLogin(String code) throws Exception;
 
-    CommonResult addManager(AddManagerDTO addManagerDTO);
+    CommonResult wxRegister(RegisterDTO registerDTO) throws Exception;
+
+    CommonResult login(ManagerLoginDTO managerLoginDTO) throws Exception;
+
+    CommonResult addManager(AddManagerDTO addManagerDTO) throws Exception;
 
     CommonResult deleteManager(DeleteManagerDTO deleteManagerDTO);
 
-    CommonResult updateManager(AddManagerDTO addManagerDTO);
+    CommonResult updateManager(AddManagerDTO addManagerDTO) throws Exception;
 
     CommonResult selectManager(Long parkId, Long productId, Long managerId, Integer pageNum, Integer pageSize);
 
@@ -36,8 +40,4 @@ public interface ManagerService {
     CommonResult historyRecord(Integer status, Long productId, Long parkId);
 
     CommonResult cancellation(CancellationDto cancellationDto);
-
-    CommonResult wxLogin(String code) throws Exception;
-
-    CommonResult wxRegister(RegisterDTO registerDTO) throws Exception;
 }
