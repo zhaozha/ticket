@@ -1,7 +1,6 @@
 spring:
   # 设置数据库
   datasource:
-  # url: jdbc:mysql://rm-bp1axi70ew70h67ha.mysql.rds.aliyuncs.com:3306/gate?characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=GMT%2B8
     url: jdbc:mysql://rm-bp1306r3i542lt353.mysql.rds.aliyuncs.com:3306/gate?characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=GMT%2B8
     hikari:
       username: ingcart
@@ -12,7 +11,7 @@ spring:
 
 # redisson 配置
 redisson:
-  address: redis://r-wz91r86qha12v64mo7.redis.rds.aliyuncs.com:6379
+  address: redis://r-wz91r86qha12v64mo7pd.redis.rds.aliyuncs.com:6379
   password: 210*2462fqy168_c922b2a1ea504b
   timeout: 3000
   # 连接池配置
