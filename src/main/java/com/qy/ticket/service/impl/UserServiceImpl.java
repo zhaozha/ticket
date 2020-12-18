@@ -302,16 +302,17 @@ public class UserServiceImpl implements UserService {
             List<TblBillChild> tblBillChildren = MapperUtil.getListByKVs(TblBillChild.class, tblBillChildMapper, "billId", billId);
             for (TblBillChild tblBillChild : tblBillChildren) {
                 // 子订单幂等
-                int j = tblBillChildCustomizedMapper.change2PayStatus(tblBillChild.getId());
+                long recordId = CollectionUtils.isEmpty(tblRecords) ? idBaseService.genId() : tblRecords.get(0).getId();
+                int j = tblBillChildCustomizedMapper.change2PayStatus(tblBillChild.getId(), recordId);
                 if (j == 0) {
                     continue;
                 }
                 if (CollectionUtils.isEmpty(tblRecords)) {
-                    fistChargeBusiness(tblBillChild);
+                    fistChargeBusiness(recordId, tblBillChild);
                 } else {
                     List<TblRecord> collect = tblRecords.stream().filter(s -> s.getTicketId().equals(tblBillChild.getTicketId())).collect(Collectors.toList());
                     if (CollectionUtils.isEmpty(collect)) {
-                        fistChargeBusiness(tblBillChild);
+                        fistChargeBusiness(recordId, tblBillChild);
                     } else {
                         secondChargeBusiness(collect.get(0), tblBillChild);
                     }
@@ -327,9 +328,8 @@ public class UserServiceImpl implements UserService {
      *
      * @param tblBillChild
      */
-    private void fistChargeBusiness(TblBillChild tblBillChild) throws Exception {
+    private void fistChargeBusiness(Long recordId, TblBillChild tblBillChild) throws Exception {
         // 价格以下单时的价格为准
-        long recordId = idBaseService.genId();
         Integer ticketPrice = tblBillChild.getTicketPrice();
         Integer returnableAmount = tblBillChild.getReturnableAmount();
         Integer ticketNum = tblBillChild.getTicketNum();
@@ -505,8 +505,14 @@ public class UserServiceImpl implements UserService {
                         // 账单变更
                         tblBillCustomizedMapper.refund2Upd(tblBillChild.getBillId(), billRealRefund);
                         tblBillChildCustomizedMapper.refund2Upd(tblBillChild.getId(), billRealRefund);
+                        if (totalRefundAmount == 0) {
+                            break;
+                        }
                     }
                     refund(billId, childList.get(0).getFatherAmount(), totalRefund);
+                    if (totalRefundAmount == 0) {
+                        break;
+                    }
                 }
             }
         }

@@ -20,7 +20,7 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
     int charge2Upd(@Param("id") Long id, @Param("amount") Integer amount, @Param("returnableAmount") Integer returnableAmount, @Param("ticketNum") Integer ticketNum);
 
     @Update("update tbl_record set available_num = 0,used_num = effective_num," +
-            "income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"
+            "income= income - #{refundAmount},refund_amount = refund_amount + #{refundAmount}"
             + " where id = #{id}")
     int cancellation2Upd(@Param("id") Long id, @Param("amount") Integer refundAmount);
 
@@ -37,7 +37,7 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
     int cancellationAll2Upd(@Param("ids") List<Long> ids);
 
     @Update("update tbl_record set effective_num = effective_num - #{effectiveNum},available_num = available_num - #{availableNum}," +
-            "income= income - #{refundAmount},refundAmount = refundAmount + #{refundAmount}"
+            "income= income - #{refundAmount},refund_amount = refund_amount + #{refundAmount}"
             + " where id = #{id}")
     int refund2Upd(@Param("id") Long id, @Param("effectiveNum") Integer effectiveNum, @Param("availableNum") Integer availableNum, @Param("refundAmount") Integer refundAmount);
 
