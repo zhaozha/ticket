@@ -59,6 +59,7 @@ public class ManagerController {
         return managerService.updateManager(addManagerDTO);
     }
 
+    @IgnoreUserToken
     @GetMapping("/manager/parkId/{parkId}/productId/{productId}/managerId/{managerId}/pageNum/{pageNum}/pageSize/{pageSize}")
     public CommonResult selectManager(
             @PathVariable Long parkId,
@@ -79,7 +80,7 @@ public class ManagerController {
     public CommonResult updTicketPrice(@RequestBody List<TicketPriceDto> ticketPriceDtos) throws Exception {
         return managerService.updTicketPrice(ticketPriceDtos);
     }
-    
+
     @GetMapping("/manager/history/parkId/{parkId}/productId/{productId}/status/{status}")
     public CommonResult historyRecord(@PathVariable Long parkId, @PathVariable Long productId, @PathVariable Integer status) throws Exception {
         return managerService.historyRecord(status, productId, parkId);
@@ -97,6 +98,7 @@ public class ManagerController {
         return userService.refundTrain(tblRefundTrainDTO.getRecordId(), tblRefundTrainDTO);
     }
 
+    @IgnoreUserToken
     @GetMapping("/detail/parkId/{parkId}/productId/{productId}/startTime/{startTime}/endTime/{endTime}/pageNum/{pageNum}/pageSize/{pageSize}")
     public CommonResult selectBillByDetail(
             @PathVariable Long parkId,
@@ -110,6 +112,7 @@ public class ManagerController {
         return managerService.selectBillByDetail(startTime, endTime, pageNum, pageSize, parkId, productId, true);
     }
 
+    @IgnoreUserToken
     @GetMapping("/day/parkId/{parkId}/productId/{productId}/startTime/{startTime}/endTime/{endTime}/pageNum/{pageNum}/pageSize/{pageSize}")
     public CommonResult selectBillByDay(
             @PathVariable Long parkId,
@@ -123,6 +126,7 @@ public class ManagerController {
         return managerService.selectBillBySum(startTime, endTime, pageNum, pageSize, parkId, productId, 0, true);
     }
 
+    @IgnoreUserToken
     @GetMapping("/month/parkId/{parkId}/productId/{productId}/startTime/{startTime}/endTime/{endTime}/pageNum/{pageNum}/pageSize/{pageSize}")
     public CommonResult selectBillByMonth(
             @PathVariable Long parkId,
@@ -137,6 +141,7 @@ public class ManagerController {
                 startTime, endTime, pageNum, pageSize, parkId, productId, 1, true);
     }
 
+    @IgnoreUserToken
     @GetMapping("/pdf/day/parkId/{parkId}/productId/{productId}/startTime/{startTime}/endTime/{endTime}")
     public void pdfDay(HttpServletResponse response,
                        @PathVariable Long parkId,
@@ -146,6 +151,7 @@ public class ManagerController {
         managerService.pdfDay(response, startTime, endTime, parkId, productId);
     }
 
+    @IgnoreUserToken
     @GetMapping("/pdf/month/parkId/{parkId}/productId/{productId}/startTime/{startTime}/endTime/{endTime}")
     public void pdfMonth(HttpServletResponse response,
                          @PathVariable Long parkId,
