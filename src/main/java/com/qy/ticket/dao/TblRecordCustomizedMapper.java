@@ -36,10 +36,10 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
             "</script>")
     int cancellationAll2Upd(@Param("ids") List<Long> ids);
 
-    @Update("update tbl_record set effective_num = effective_num - #{effectiveNum},available_num = available_num - #{availableNum}," +
+    @Update("update tbl_record set effective_num = effective_num - #{effectiveNum},available_num = available_num - #{availableNum},used_num = used_num + #{usedNum}," +
             "income= income - #{refundAmount},refund_amount = refund_amount + #{refundAmount}"
             + " where id = #{id}")
-    int refund2Upd(@Param("id") Long id, @Param("effectiveNum") Integer effectiveNum, @Param("availableNum") Integer availableNum, @Param("refundAmount") Integer refundAmount);
+    int refund2Upd(@Param("id") Long id, @Param("effectiveNum") Integer effectiveNum, @Param("availableNum") Integer availableNum, @Param("usedNum") Integer usedNum, @Param("refundAmount") Integer refundAmount);
 
     @Select("select sum(amount) as amount,sum(refund_amount) as refundAmount,sum(income) as income,sum(effective_num) as effectiveNum"
             + " from tbl_record"

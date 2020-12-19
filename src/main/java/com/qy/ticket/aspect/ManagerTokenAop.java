@@ -42,13 +42,13 @@ import static com.qy.ticket.exception.EumException.SERVICE_ERROR;
 @Order(2)
 @Component
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class UserTokenAop {
+public class ManagerTokenAop {
     private final HttpServletRequest request;
     private final RedissonClient redissonSingle;
     private final ValidatorImpl validator;
     private final JwtUtil jwtOperator;
 
-    @Pointcut(value = "execution(public * com.qy.ticket.controller.UserController.*(..))")
+    @Pointcut(value = "execution(public * com.qy.ticket.controller.ManagerController.*(..))")
     public void commonPointcut() {
     }
 
@@ -66,7 +66,7 @@ public class UserTokenAop {
                 return new CommonResult(EumException.NOT_LOGIN);
             }
             buildBaseContext(wthToken);
-            RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_USER_TOKEN, BaseContext.getUserId().toString()));
+            RBucket<String> bucket = redissonSingle.getBucket(RedisConstant.concat(RedisConstant.KEY_MANAGER_TOKEN, BaseContext.getUserId().toString()));
             if (!bucket.isExists()) {
                 return new CommonResult(EumException.NOT_LOGIN);
             }

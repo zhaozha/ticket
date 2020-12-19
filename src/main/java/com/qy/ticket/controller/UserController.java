@@ -33,19 +33,16 @@ public class UserController {
         return userService.wxRegister(tblUserDto);
     }
 
-    @IgnoreUserToken
     @GetMapping("/ticket/productId/{productId}/parkId/{parkId}")
     public CommonResult ticket(@PathVariable Long productId, @PathVariable Long parkId) throws Exception {
         return userService.ticket(productId, parkId);
     }
 
-    @IgnoreUserToken
     @GetMapping("/record/phoneNum/{phoneNum}/status/{status}/productId/{productId}/parkId/{parkId}")
     public CommonResult record(@PathVariable String phoneNum, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
         return userService.record(phoneNum, status, productId, parkId);
     }
 
-    @IgnoreUserToken
     @GetMapping("/history/record/phoneNum/{phoneNum}/date/{date}/status/{status}/productId/{productId}/parkId/{parkId}")
     public CommonResult historyRecord(@PathVariable String phoneNum, @PathVariable String date, @PathVariable Integer status, @PathVariable Long productId, @PathVariable Long parkId) throws Exception {
         return userService.historyRecord(phoneNum, date, status, productId, parkId);
@@ -57,19 +54,18 @@ public class UserController {
         return userService.unifiedorder(tblBillDTO);
     }
 
-    @IgnoreUserToken
     @GetMapping("/bill/phoneNum/{phoneNum}")
     public CommonResult selectBills(@PathVariable String phoneNum) throws Exception {
         return userService.selectBills(phoneNum);
     }
 
-    @IgnoreUserToken
+    @UserLock
     @PostMapping("/wx/refund")
     public CommonResult refund(@RequestBody TblRefundDTO tblRefundDTO) throws Exception {
         return userService.refund(tblRefundDTO.getRecordId(), tblRefundDTO);
     }
 
-    @IgnoreUserToken
+    @UserLock
     @PostMapping("/wx/special/refund")
     public CommonResult specialRefund(@RequestBody TblSpecialRefundDTO tblSpecialRefundDTO) throws Exception {
         return userService.specialRefund(tblSpecialRefundDTO.getRecordId(), tblSpecialRefundDTO);

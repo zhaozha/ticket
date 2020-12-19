@@ -302,26 +302,26 @@ public class UserServiceImpl implements UserService {
             List<TblBillChild> tblBillChildren = MapperUtil.getListByKVs(TblBillChild.class, tblBillChildMapper, "billId", billId);
             for (TblBillChild tblBillChild : tblBillChildren) {
                 // 子订单幂等
-                boolean type = true;
+//                boolean type = true;
                 long recordId = idBaseService.genId();
-                TblRecord tblRecord = new TblRecord();
-                if (!CollectionUtils.isEmpty(tblRecords)) {
-                    List<TblRecord> collect = tblRecords.stream().filter(s -> s.getTicketId().equals(tblBillChild.getTicketId())).collect(Collectors.toList());
-                    if (!CollectionUtils.isEmpty(collect)) {
-                        recordId = collect.get(0).getId();
-                        tblRecord = collect.get(0);
-                        type = false;
-                    }
-                }
+//                TblRecord tblRecord = new TblRecord();
+//                if (!CollectionUtils.isEmpty(tblRecords)) {
+//                    List<TblRecord> collect = tblRecords.stream().filter(s -> s.getTicketId().equals(tblBillChild.getTicketId())).collect(Collectors.toList());
+//                    if (!CollectionUtils.isEmpty(collect)) {
+//                        recordId = collect.get(0).getId();
+//                        tblRecord = collect.get(0);
+//                        type = false;
+//                    }
+//                }
                 int j = tblBillChildCustomizedMapper.change2PayStatus(tblBillChild.getId(), recordId);
                 if (j == 0) {
                     continue;
                 }
-                if (type) {
-                    fistChargeBusiness(recordId, tblBillChild);
-                } else {
-                    secondChargeBusiness(tblRecord, tblBillChild);
-                }
+//                if (type) {
+                fistChargeBusiness(recordId, tblBillChild);
+//                } else {
+//                    secondChargeBusiness(tblRecord, tblBillChild);
+//                }
             }
             return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
         }
@@ -437,7 +437,7 @@ public class UserServiceImpl implements UserService {
         CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
         // 退款成功,变更有效票数、可核销票数、退款金额、订单收入
         if (commonResult.getStatus() == 200) {
-            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, ticketNum, totalRefundAmount);
+            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, ticketNum, 0, totalRefundAmount);
         }
         return commonResult;
     }
@@ -603,7 +603,7 @@ public class UserServiceImpl implements UserService {
         CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
         // 退款成功,变更有效票数、可核销票数、退款金额、订单收入
         if (commonResult.getStatus() == 200) {
-            tblRecordCustomizedMapper.refund2Upd(recordId, 0, availableNum, totalRefundAmount);
+            tblRecordCustomizedMapper.refund2Upd(recordId, 0, availableNum, availableNum, totalRefundAmount);
         }
         return commonResult;
     }
@@ -626,7 +626,7 @@ public class UserServiceImpl implements UserService {
         CommonResult commonResult = circleRefund(tblRecord, totalRefundAmount);
         // 退款成功,变更有效票数、可核销票数、退款金额、订单收入
         if (commonResult.getStatus() == 200) {
-            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, ticketNum, totalRefundAmount);
+            tblRecordCustomizedMapper.refund2Upd(recordId, ticketNum, 0, -ticketNum, totalRefundAmount);
         }
         return commonResult;
     }
