@@ -302,20 +302,25 @@ public class UserServiceImpl implements UserService {
             List<TblBillChild> tblBillChildren = MapperUtil.getListByKVs(TblBillChild.class, tblBillChildMapper, "billId", billId);
             for (TblBillChild tblBillChild : tblBillChildren) {
                 // 子订单幂等
-                long recordId = CollectionUtils.isEmpty(tblRecords) ? idBaseService.genId() : tblRecords.get(0).getId();
+                boolean type = true;
+                long recordId = idBaseService.genId();
+                TblRecord tblRecord = new TblRecord();
+                if (!CollectionUtils.isEmpty(tblRecords)) {
+                    List<TblRecord> collect = tblRecords.stream().filter(s -> s.getTicketId().equals(tblBillChild.getTicketId())).collect(Collectors.toList());
+                    if (!CollectionUtils.isEmpty(collect)) {
+                        recordId = collect.get(0).getId();
+                        tblRecord = collect.get(0);
+                        type = false;
+                    }
+                }
                 int j = tblBillChildCustomizedMapper.change2PayStatus(tblBillChild.getId(), recordId);
                 if (j == 0) {
                     continue;
                 }
-                if (CollectionUtils.isEmpty(tblRecords)) {
+                if (type) {
                     fistChargeBusiness(recordId, tblBillChild);
                 } else {
-                    List<TblRecord> collect = tblRecords.stream().filter(s -> s.getTicketId().equals(tblBillChild.getTicketId())).collect(Collectors.toList());
-                    if (CollectionUtils.isEmpty(collect)) {
-                        fistChargeBusiness(recordId, tblBillChild);
-                    } else {
-                        secondChargeBusiness(collect.get(0), tblBillChild);
-                    }
+                    secondChargeBusiness(tblRecord, tblBillChild);
                 }
             }
             return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
