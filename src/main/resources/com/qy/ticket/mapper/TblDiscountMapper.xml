@@ -11,5 +11,6 @@
     <result column="product_id" jdbcType="BIGINT" property="productId" />
     <result column="product_name" jdbcType="VARCHAR" property="productName" />
     <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="discount" jdbcType="INTEGER" property="discount" />
   </resultMap>
 </mapper>

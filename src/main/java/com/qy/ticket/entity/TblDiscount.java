@@ -26,4 +26,6 @@ public class TblDiscount {
     private String productName;
 
     private Integer status;
+
+    private Integer discount;
 }

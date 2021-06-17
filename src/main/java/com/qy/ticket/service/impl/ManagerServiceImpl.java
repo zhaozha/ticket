@@ -470,10 +470,10 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     @Override
-    public CommonResult selectDiscount(String parkId, String productId) throws Exception {
+    public CommonResult selectDiscount(Long parkId, Long productId) throws Exception {
         TblDiscount tblDiscount = MapperUtil.getOneByKVs(TblDiscount.class, tblDiscountMapper, null, "parkId", parkId, "productId", productId);
         if (tblDiscount == null) {
-            return new CommonResult(200, "查询成功", null);
+            return new CommonResult(400, "暂无数据", null);
         }
         return new CommonResult(200, "查询成功", tblDiscount);
     }

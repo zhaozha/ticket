@@ -42,7 +42,7 @@ public interface ManagerService {
 
     void pdfMonth(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
 
-    CommonResult selectDiscount(String parkId, String productId) throws Exception;
+    CommonResult selectDiscount(Long parkId, Long productId) throws Exception;
 
     CommonResult updateDiscount(TblDiscount tblDiscount) throws Exception;
 

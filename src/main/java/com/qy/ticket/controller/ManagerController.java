@@ -5,6 +5,7 @@ import com.qy.ticket.annotation.UserLock;
 import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.manager.*;
 import com.qy.ticket.dto.user.TblRefundTrainDTO;
+import com.qy.ticket.entity.TblDiscount;
 import com.qy.ticket.service.impl.ManagerServiceImpl;
 import com.qy.ticket.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +56,7 @@ public class ManagerController {
     }
 
     @PostMapping("/manager/update")
-    public CommonResult updateManager(@RequestBody AddManagerDTO addManagerDTO) throws Exception{
+    public CommonResult updateManager(@RequestBody AddManagerDTO addManagerDTO) throws Exception {
         return managerService.updateManager(addManagerDTO);
     }
 
@@ -159,5 +160,29 @@ public class ManagerController {
                          @PathVariable String startTime,
                          @PathVariable String endTime) {
         managerService.pdfMonth(response, startTime, endTime, parkId, productId);
+    }
+
+    @IgnoreUserToken
+    @GetMapping("/discount/sel/parkId/{parkId}/productId/{productId}")
+    public CommonResult selectDiscount(@PathVariable Long parkId, @PathVariable Long productId) throws Exception {
+        return managerService.selectDiscount(parkId, productId);
+    }
+
+    @IgnoreUserToken
+    @PostMapping("/discount/upd")
+    public CommonResult updateDiscount(@RequestBody TblDiscount tblDiscount) throws Exception {
+        return managerService.updateDiscount(tblDiscount);
+    }
+
+    @IgnoreUserToken
+    @PostMapping("/discount/add")
+    public CommonResult insertDiscount(@RequestBody TblDiscount tblDiscount) throws Exception {
+        return managerService.insertDiscount(tblDiscount);
+    }
+
+    @IgnoreUserToken
+    @PostMapping("/discount/usr")
+    public CommonResult discount(@RequestBody DiscountDto discountDto) throws Exception {
+        return managerService.discount(discountDto);
     }
 }
