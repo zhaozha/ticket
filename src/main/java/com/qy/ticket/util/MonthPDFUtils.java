@@ -129,10 +129,10 @@ public class MonthPDFUtils {
                     value = NumberUtil.divide100(new BigDecimal(sumRecordDTO.getIncome()));
                     break;
                 case 2:
-                    value = NumberUtil.divide100(new BigDecimal(NumberUtil.multiplyHalfUp(sumRecordDTO.getIncome() + sumRecordDTO.getWxFee(), 100 - proportion)));
+                    value = NumberUtil.divide100(new BigDecimal(new BigDecimal(NumberUtil.divide100(new BigDecimal(NumberUtil.multiplyHalfUp(sumRecordDTO.getIncome() + sumRecordDTO.getWxFee(), 100 - proportion)))).intValue()));
                     break;
                 case 3:
-                    value = NumberUtil.divide100(new BigDecimal(NumberUtil.multiplyHalfUp(sumRecordDTO.getIncome() + sumRecordDTO.getWxFee(), proportion)));
+                    value = NumberUtil.divide100(new BigDecimal(new BigDecimal(NumberUtil.divide100(new BigDecimal(NumberUtil.multiplyHalfUp(sumRecordDTO.getIncome() + sumRecordDTO.getWxFee(), proportion)))).intValue()));
                     break;
                 default:
                     value = "";

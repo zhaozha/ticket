@@ -119,9 +119,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public CommonResult wxRegister(TblUserDto tblUserDto) throws Exception {
         TblUser tblUser = new TblUser();
-        BeanUtils.copyProperties(tblUserDto, tblUser);
-        tblUser.setId(idBaseService.genId());
-        tblUserMapper.insert(tblUser);
+        List<TblUser> tblUsers = MapperUtil.getListByKVs(TblUser.class, tblUserMapper, "openId", tblUserDto.getOpenId());
+        if (CollectionUtils.isEmpty(tblUsers)) {
+            BeanUtils.copyProperties(tblUserDto, tblUser);
+            tblUser.setId(idBaseService.genId());
+            tblUser.setNickName("");
+            tblUserMapper.insert(tblUser);
+        } else {
+            tblUser = tblUsers.get(0);
+        }
         return CommonResult.builder().status(200).msg("注册成功").data(buildLoginRes(tblUser, "")).build();
     }
 

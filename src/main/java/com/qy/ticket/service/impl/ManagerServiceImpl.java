@@ -5,10 +5,12 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.qy.ticket.annotation.RecordLock;
 import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.constant.RedisConstant;
 import com.qy.ticket.dao.*;
 import com.qy.ticket.dto.manager.*;
+import com.qy.ticket.dto.user.TblSpecialRefundDTO;
 import com.qy.ticket.entity.*;
 import com.qy.ticket.service.ManagerService;
 import com.qy.ticket.util.*;
@@ -50,6 +52,9 @@ public class ManagerServiceImpl implements ManagerService {
     private final VTicketMapper vTicketMapper;
     private final TblTicketMapper tblTicketMapper;
     private final TblCheckCustomizedMapper tblCheckCustomizedMapper;
+    private final TblDiscountMapper tblDiscountMapper;
+    private final TblDiscountRecordMapper tblDiscountRecordMapper;
+    private final UserServiceImpl userService;
 
     private final IdBaseService idBaseService;
     private final RestTemplate restTemplate;
@@ -463,4 +468,54 @@ public class ManagerServiceImpl implements ManagerService {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public CommonResult selectDiscount(String parkId, String productId) throws Exception {
+        TblDiscount tblDiscount = MapperUtil.getOneByKVs(TblDiscount.class, tblDiscountMapper, null, "parkId", parkId, "productId", productId);
+        if (tblDiscount == null) {
+            return new CommonResult(200, "查询成功", null);
+        }
+        return new CommonResult(200, "查询成功", tblDiscount);
+    }
+
+    @Override
+    public CommonResult updateDiscount(TblDiscount tblDiscount) throws Exception {
+        tblDiscountMapper.updateByPrimaryKey(tblDiscount);
+        return new CommonResult(200, "更新成功", tblDiscount);
+    }
+
+    @Override
+    public CommonResult insertDiscount(TblDiscount tblDiscount) throws Exception {
+        TblDiscount tblDiscount2 = MapperUtil.getOneByKVs(TblDiscount.class, tblDiscountMapper, null, "parkId", tblDiscount.getParkId(), "productId", tblDiscount.getProductId());
+        if (tblDiscount2 != null) {
+            return new CommonResult(400, "不要重复添加", null);
+        }
+        tblDiscount.setId(idBaseService.genId());
+        tblDiscountMapper.insert(tblDiscount);
+        return new CommonResult(200, "新增成功", null);
+    }
+
+    @Transactional
+    @Override
+    public CommonResult discount(DiscountDto discountDto) throws Exception {
+        String phoneNum = discountDto.getPhoneNum();
+        Example example = new Example(TblRecord.class,true,true);
+        example.setOrderByClause("time desc");
+        example.createCriteria().andEqualTo("phoneNum",phoneNum);
+        List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
+        if(!CollectionUtils.isEmpty(tblRecords)){
+            TblRecord tblRecord = tblRecords.get(0);
+            Long recordId = tblRecord.getId();
+            TblDiscountRecord tblDiscountRecord = tblDiscountRecordMapper.selectByPrimaryKey(recordId);
+            if(null == tblDiscountRecord){
+                Integer income = tblRecord.getIncome();
+                Integer discountAmount  = income/2;
+                userService.specialRefund(recordId, TblSpecialRefundDTO.builder().phoneNum(phoneNum).managerId(-1L).refundAmount(discountAmount).build());
+                tblDiscountRecordMapper.insert(TblDiscountRecord.builder().discount(discountAmount).status(1).id(idBaseService.genId()).build());
+                return new CommonResult(200, "优惠成功", null);
+            }
+        }
+        return new CommonResult(400, "已优惠", null);
+    }
+
 }

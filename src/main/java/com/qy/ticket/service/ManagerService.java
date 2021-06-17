@@ -2,6 +2,7 @@ package com.qy.ticket.service;
 
 import com.qy.ticket.common.CommonResult;
 import com.qy.ticket.dto.manager.*;
+import com.qy.ticket.entity.TblDiscount;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -40,4 +41,12 @@ public interface ManagerService {
     void pdfDay(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
 
     void pdfMonth(HttpServletResponse response, String startTime, String endTime, Long parkId, Long productId);
+
+    CommonResult selectDiscount(String parkId, String productId) throws Exception;
+
+    CommonResult updateDiscount(TblDiscount tblDiscount) throws Exception;
+
+    CommonResult insertDiscount(TblDiscount tblDiscount) throws Exception;
+
+    CommonResult discount(DiscountDto discountDto) throws Exception;
 }

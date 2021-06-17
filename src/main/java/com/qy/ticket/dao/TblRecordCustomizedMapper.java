@@ -22,7 +22,7 @@ public interface TblRecordCustomizedMapper extends QueryMapper<TblRecord> {
     @Update("update tbl_record set available_num = 0,used_num = effective_num," +
             "income= income - #{refundAmount},refund_amount = refund_amount + #{refundAmount}"
             + " where id = #{id}")
-    int cancellation2Upd(@Param("id") Long id, @Param("amount") Integer refundAmount);
+    int cancellation2Upd(@Param("id") Long id, @Param("refundAmount") Integer refundAmount);
 
     @Update("update tbl_record set reason = '指定金额退款'"
             + " where id = #{id}")
