@@ -499,23 +499,24 @@ public class ManagerServiceImpl implements ManagerService {
     @Override
     public CommonResult discount(DiscountDto discountDto) throws Exception {
         String phoneNum = discountDto.getPhoneNum();
-        Example example = new Example(TblRecord.class,true,true);
+        Example example = new Example(TblRecord.class, true, true);
         example.setOrderByClause("time desc");
-        example.createCriteria().andEqualTo("phoneNum",phoneNum);
+        example.createCriteria().andEqualTo("phoneNum", phoneNum)
+                .andLike("time", new SimpleDateFormat("yyyy-MM-dd").format(new Date()) + "%");
         List<TblRecord> tblRecords = tblRecordMapper.selectByExample(example);
-        if(!CollectionUtils.isEmpty(tblRecords)){
+        if (!CollectionUtils.isEmpty(tblRecords)) {
             TblRecord tblRecord = tblRecords.get(0);
             Long recordId = tblRecord.getId();
             TblDiscountRecord tblDiscountRecord = tblDiscountRecordMapper.selectByPrimaryKey(recordId);
-            if(null == tblDiscountRecord){
+            if (null == tblDiscountRecord) {
                 Integer income = tblRecord.getIncome();
-                Integer discountAmount  = income/2;
+                Integer discountAmount = income / 2;
                 userService.specialRefund(recordId, TblSpecialRefundDTO.builder().phoneNum(phoneNum).managerId(-1L).refundAmount(discountAmount).build());
                 tblDiscountRecordMapper.insert(TblDiscountRecord.builder().discount(discountAmount).status(1).id(idBaseService.genId()).build());
                 return new CommonResult(200, "优惠成功", null);
             }
         }
-        return new CommonResult(400, "已优惠", null);
+        return new CommonResult(400, "已优惠或当日无行程", null);
     }
 
 }

@@ -556,6 +556,7 @@ public class UserServiceImpl implements UserService {
         wxPayRefundDTO.setRefund_fee(totalRefund);
 
         WxPayRefundResultDTO wxPayRefundResultDTO = (WxPayRefundResultDTO) WXPayUtil.mapToObject(WXPayUtil.xmlToMap(wxRefundRestTemplate.postForObject(DOMAIN_API + REFUND_URL_SUFFIX, WXPayUtil.generateSignedXml(WXPayUtil.objectToMap(wxPayRefundDTO), WX_PAY_KEY), String.class)), WxPayRefundResultDTO.class);
+        log.info(wxPayRefundResultDTO.toString());
         if (wxPayRefundResultDTO.getResult_code().equals("SUCCESS")
                 && wxPayRefundResultDTO.getReturn_code().equals("SUCCESS")) {
             TblBillRefund tblBillRefund = TblBillRefund.builder().id(refundId).amount(totalRefund).billId(billId).time(new Date()).build();
